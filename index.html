@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Typo Guide Generator</title>
-<meta name="description" content="Compose a custom typography correction guide from an editable link database and a Fontspector report.">
+<meta name="description" content="Compose a custom typography correction guide from an editable link database.">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>✎</text></svg>">
 <link rel="stylesheet" href="css/style.css">
 </head>
@@ -14,10 +14,9 @@
   <header class="masthead">
     <p class="masthead__mark">Typo Guide Generator</p>
     <h1>Compose a custom correction guide</h1>
-    <p>Select the problems found on this project, check the related resources, add the Fontspector report if needed — and export a PDF ready to send to the designer.</p>
+    <p>Select the problems found on this project, check the related resources — then export a PDF ready to send to the designer.</p>
     <nav class="masthead__nav">
-      <a href="admin.html">Manage the link database</a>
-      <a href="https://fonttools.github.io/fontspector/" target="_blank" rel="noopener">Fontspector (official tool)</a>
+      <a href="contribute.html">Suggest a link</a>
     </nav>
   </header>
 
@@ -30,7 +29,7 @@
     <p class="section__intro">Check everything that applies to this project. The link list in the next step is calculated from these choices — come back here and click "Show links" again if you change your mind.</p>
     <div id="problems-list"><!-- rendered by js/app.js --></div>
     <div class="actions-row">
-      <button class="btn btn--pencil" id="btn-show-links" type="button">Show links</button>
+      <button class="btn btn--primary" id="btn-show-links" type="button">Show links</button>
     </div>
   </section>
 
@@ -74,56 +73,13 @@
     </div>
   </section>
 
-  <!-- Step 3 — fontspector -->
+  <!-- Step 3 — generate -->
   <section class="section" id="section-3">
     <div class="section__head">
       <span class="section__num">03</span>
-      <h2>Fontspector report <span style="font-weight:400;color:var(--ink-faint);font-size:0.85rem;">(optional)</span></h2>
-    </div>
-    <p class="section__intro">Drop the font file to pre-fill its name, then import a Fontspector JSON report to include it — hierarchized and explained — in the guide.</p>
-
-    <div class="dropzone" id="font-dropzone">
-      <p class="dropzone__label">Drop a .ttf / .otf here, or click to choose a file</p>
-      <p class="dropzone__hint">Only used to pre-fill the font name in the guide — nothing is sent anywhere, everything stays in your browser.</p>
-      <input type="file" id="font-file-input" accept=".ttf,.otf,.woff">
-    </div>
-    <div class="font-loaded" id="font-loaded">
-      <span class="font-loaded__name" id="font-loaded-name"></span>
-      <span class="font-loaded__meta" id="font-loaded-meta"></span>
-    </div>
-
-    <div class="divider-or">fontspector report</div>
-
-    <div class="field">
-      <label for="fs-file-input">Import a Fontspector report (.json)</label>
-      <input type="file" id="fs-file-input" accept=".json,application/json">
-    </div>
-
-    <details style="margin-top:8px;">
-      <summary style="cursor:pointer;font-size:0.875rem;color:var(--pencil);">How do I get this file?</summary>
-      <div style="margin-top:10px;font-size:0.875rem;color:var(--ink-soft);line-height:1.6;">
-        <p style="margin:0 0 8px;"><strong>Option 1 — official web tool</strong> (no install needed): go to <a href="https://fonttools.github.io/fontspector/" target="_blank" rel="noopener">fonttools.github.io/fontspector</a>, drop your font, run the analysis in your browser.</p>
-        <p style="margin:0 0 8px;"><strong>Option 2 — command line</strong>, if Fontspector is installed:</p>
-        <pre style="background:var(--ink);color:var(--paper);padding:10px 12px;border-radius:4px;font-family:var(--font-mono);font-size:0.8rem;overflow-x:auto;margin:0 0 8px;">fontspector --profile googlefonts --json report.json MyFont.ttf</pre>
-        <p style="margin:0;">Then import the resulting <code>report.json</code> file above.</p>
-      </div>
-    </details>
-
-    <div class="report-status" id="report-status">
-      <strong id="report-status-title"></strong>
-      <div class="report-status__summary" id="report-status-summary"></div>
-    </div>
-
-    <div class="check-list" id="check-list"></div>
-  </section>
-
-  <!-- Step 4 — generate -->
-  <section class="section" id="section-4">
-    <div class="section__head">
-      <span class="section__num">04</span>
       <h2>Generate the guide</h2>
     </div>
-    <p class="section__intro">One last setting before exporting.</p>
+    <p class="section__intro">A few details, then export.</p>
 
     <div class="meta-grid">
       <div class="field">
@@ -131,7 +87,7 @@
         <input type="text" id="meta-title" value="Typography Correction Guide">
       </div>
       <div class="field">
-        <label for="meta-project">Project / font</label>
+        <label for="meta-project">Project / font name</label>
         <input type="text" id="meta-project" placeholder="e.g. Fontname v0.3">
       </div>
       <div class="field">
@@ -139,20 +95,20 @@
         <input type="text" id="meta-designer" placeholder="optional">
       </div>
     </div>
-    <div class="field">
+    <div class="field" style="max-width:var(--prose-w);">
       <label for="meta-notes">Intro note (optional)</label>
       <textarea id="meta-notes" placeholder="A word of context for whoever receives this guide."></textarea>
     </div>
 
     <div class="generate-panel">
-      <button class="btn btn--pencil btn--lg" id="btn-generate" type="button">Generate the guide (PDF)</button>
+      <button class="btn btn--primary btn--lg" id="btn-generate" type="button">Generate the guide (PDF)</button>
       <p class="generate-panel__note">Everything is generated in your browser — no data is sent to a server.</p>
     </div>
   </section>
 
   <footer class="page-footer">
     <span>Typo Guide Generator</span>
-    <a href="admin.html">Manage the link database →</a>
+    <a href="contribute.html">Suggest a link →</a>
   </footer>
 
 </div>
@@ -161,8 +117,6 @@
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.10/pdfmake.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.10/vfs_fonts.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/opentype.js@1.3.4/dist/opentype.min.js"></script>
-<script src="js/fontspector.js"></script>
 <script src="js/pdf.js"></script>
 <script src="js/app.js"></script>
 </body>
