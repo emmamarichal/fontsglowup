@@ -1,15 +1,15 @@
 /* ==========================================================================
    Fontspector report parser
    ----------------------------------------------------------------------
-   Le schéma JSON exact de `fontspector --json` peut évoluer d'une version
-   à l'autre de l'outil (c'est un projet jeune, réécrit en Rust). Plutôt
-   que de coder en dur des noms de champs qui pourraient casser au prochain
-   changement de version, on parcourt récursivement le rapport et on repère
-   tout objet qui "ressemble" à un résultat de check : un statut connu
-   (ERROR/FAIL/WARN/INFO/SKIP/PASS) accompagné d'un identifiant.
+   The exact JSON schema of `fontspector --json` can change between
+   versions of the tool (it's a young project, recently rewritten in
+   Rust). Rather than hard-coding field names that could break on the
+   next version bump, we walk the report recursively and pick out any
+   object that "looks like" a check result: a known status
+   (ERROR/FAIL/WARN/INFO/SKIP/PASS) accompanied by an identifier.
 
-   Si un jour l'extraction automatique ne trouve rien (schéma trop différent),
-   l'app affiche le JSON brut plutôt que d'échouer silencieusement — voir
+   If one day the automatic extraction finds nothing (too different a
+   schema), the app shows the raw JSON instead of failing silently — see
    app.js, renderFontspectorEmpty().
    ========================================================================== */
 
@@ -32,7 +32,7 @@ const Fontspector = (function () {
     return String(idLike);
   }
 
-  // Parcourt récursivement le rapport et collecte tout objet "check result".
+  // Recursively walks the report and collects every "check result" object.
   function extractChecks(root) {
     const found = [];
     const seen = new Set();
@@ -97,8 +97,8 @@ const Fontspector = (function () {
     return counts;
   }
 
-  // Recherche une explication pédagogique : correspondance exacte d'abord,
-  // puis correspondance partielle (le check-id CONTIENT la clé "match").
+  // Looks up a plain-language explanation: exact match first, then
+  // partial match (the check-id CONTAINS the "match" key).
   function findExplanation(checkId, explanationsDb) {
     if (!explanationsDb || !explanationsDb.length) return null;
     const exact = explanationsDb.find((e) => e.match === checkId);

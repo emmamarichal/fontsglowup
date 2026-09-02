@@ -1,8 +1,8 @@
 /* ==========================================================================
    Typo Guide Generator — design system
-   Direction : la feuille d'épreuve d'un correcteur. Papier, encre noire,
-   et le bleu non-reproductible utilisé pour les annotations de correction —
-   celui qui ne devait jamais apparaître à l'impression.
+   Direction: a proofreader's correction sheet. Paper, black ink, and the
+   non-reproducible blue used for correction annotations — the one that
+   was never meant to show up in print.
    ========================================================================== */
 
 @import url('https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,500&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap');

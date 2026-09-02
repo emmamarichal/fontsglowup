@@ -1,65 +1,65 @@
 [
   {
     "id": "gf-guide-qa",
-    "title": "Google Fonts — Guide QA (comprendre les niveaux ERROR/FAIL/WARN/INFO)",
+    "title": "Google Fonts — QA Guide (understanding ERROR/FAIL/WARN/INFO levels)",
     "url": "https://googlefonts.github.io/gf-guide/qa.html",
     "tags": ["technical", "qa", "outlines", "hinting", "metadata"],
-    "explanation": "Explique la hiérarchie des niveaux de sévérité utilisés par Fontspector/Fontbakery et comment les interpréter sans paniquer."
+    "explanation": "Explains the severity hierarchy used by Fontspector/Fontbakery and how to read it without panicking."
   },
   {
     "id": "fontspector-repo",
-    "title": "Fontspector — dépôt officiel et documentation",
+    "title": "Fontspector — official repository and documentation",
     "url": "https://github.com/fonttools/fontspector",
     "tags": ["technical", "qa", "hinting", "metadata", "variable-font"],
-    "explanation": "Le dépôt de l'outil de contrôle qualité utilisé pour générer le rapport inclus dans ce guide : liste des checks, profils disponibles, installation."
+    "explanation": "The repository for the QA tool used to generate the report included in this guide: list of checks, available profiles, installation."
   },
   {
     "id": "opentype-spec",
     "title": "OpenType Specification — Microsoft Typography",
     "url": "https://learn.microsoft.com/en-us/typography/opentype/spec/",
     "tags": ["technical", "metadata", "variable-font", "hinting"],
-    "explanation": "Référence technique complète du format OpenType : tables, structure, exigences — utile pour comprendre l'origine d'un FAIL technique."
+    "explanation": "The complete technical reference for the OpenType format: tables, structure, requirements — useful for understanding where a technical FAIL comes from."
   },
   {
-    "id": "EXEMPLE-germandbls",
-    "title": "[EXEMPLE À REMPLACER] Construction correcte du ß / ẞ (Eszett)",
-    "url": "https://example.com/remplace-moi-par-ta-ressource-eszett",
+    "id": "EXAMPLE-germandbls",
+    "title": "[EXAMPLE — REPLACE ME] Correct construction of ß / ẞ (Eszett)",
+    "url": "https://example.com/replace-me-with-your-eszett-resource",
     "tags": ["german", "eszett", "germandbls"],
-    "explanation": "Remplace cette entrée par le lien que tu donnes réellement à tes designers pour ce problème (construction du ß minuscule, du ẞ capital, différences avec β)."
+    "explanation": "Replace this entry with the link you actually give designers for this problem (construction of lowercase ß, capital ẞ, differences from β)."
   },
   {
-    "id": "EXEMPLE-vietnamese",
-    "title": "[EXEMPLE À REMPLACER] Empilement des tons vietnamiens",
-    "url": "https://example.com/remplace-moi-par-ta-ressource-vietnamien",
+    "id": "EXAMPLE-vietnamese",
+    "title": "[EXAMPLE — REPLACE ME] Vietnamese tone-mark stacking",
+    "url": "https://example.com/replace-me-with-your-vietnamese-resource",
     "tags": ["vietnamese", "accents", "diacritics", "stacking"],
-    "explanation": "Remplace par ta ressource de référence sur l'empilement voyelle + ton en vietnamien."
+    "explanation": "Replace with your reference resource on stacking vowel + tone mark in Vietnamese."
   },
   {
-    "id": "EXEMPLE-cyrillic",
-    "title": "[EXEMPLE À REMPLACER] Conventions de dessin cyrilliques",
-    "url": "https://example.com/remplace-moi-par-ta-ressource-cyrillique",
+    "id": "EXAMPLE-cyrillic",
+    "title": "[EXAMPLE — REPLACE ME] Cyrillic drawing conventions",
+    "url": "https://example.com/replace-me-with-your-cyrillic-resource",
     "tags": ["cyrillic"],
-    "explanation": "Remplace par ta ressource de référence sur les formes cyrilliques (italiques notamment)."
+    "explanation": "Replace with your reference resource on Cyrillic letterforms (italics in particular)."
   },
   {
-    "id": "EXEMPLE-outlines",
-    "title": "[EXEMPLE À REMPLACER] Bonnes pratiques de dessin d'outlines",
-    "url": "https://example.com/remplace-moi-par-ta-ressource-outlines",
+    "id": "EXAMPLE-outlines",
+    "title": "[EXAMPLE — REPLACE ME] Outline drawing best practices",
+    "url": "https://example.com/replace-me-with-your-outlines-resource",
     "tags": ["outlines", "drawing", "points", "curves"],
-    "explanation": "Remplace par ton guide de référence sur les extrema, la direction des contours, le nettoyage des overlaps, etc."
+    "explanation": "Replace with your reference guide on extrema, contour direction, cleaning up overlaps, etc."
   },
   {
-    "id": "EXEMPLE-comb-marks",
-    "title": "[EXEMPLE À REMPLACER] Positionnement des marques combinantes (anchors)",
-    "url": "https://example.com/remplace-moi-par-ta-ressource-marks",
+    "id": "EXAMPLE-comb-marks",
+    "title": "[EXAMPLE — REPLACE ME] Positioning combining marks (anchors)",
+    "url": "https://example.com/replace-me-with-your-marks-resource",
     "tags": ["combining", "marks", "anchors", "gdef"],
-    "explanation": "Remplace par ta ressource sur le mark positioning / la table GDEF / les ancres."
+    "explanation": "Replace with your resource on mark positioning / the GDEF table / anchors."
   },
   {
-    "id": "EXEMPLE-kerning",
-    "title": "[EXEMPLE À REMPLACER] Crénage et approches",
-    "url": "https://example.com/remplace-moi-par-ta-ressource-kerning",
+    "id": "EXAMPLE-kerning",
+    "title": "[EXAMPLE — REPLACE ME] Kerning and spacing",
+    "url": "https://example.com/replace-me-with-your-kerning-resource",
     "tags": ["spacing", "kerning"],
-    "explanation": "Remplace par ton guide de référence sur l'espacement et le crénage."
+    "explanation": "Replace with your reference guide on spacing and kerning."
   }
 ]

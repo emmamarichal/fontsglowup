@@ -1,9 +1,9 @@
 /* ==========================================================================
-   Éditeur de la base de liens.
-   Charge data/links-database.json, permet d'éditer/ajouter/supprimer des
-   entrées, puis exporte un nouveau links-database.json à remplacer dans
-   le repo (ce site est statique : rien n'est jamais écrit automatiquement
-   sur GitHub, c'est un aller-retour manuel volontaire).
+   Link database editor.
+   Loads data/links-database.json, lets you edit/add/remove entries, then
+   exports a new links-database.json to replace in the repo (this site is
+   static: nothing is ever written back to GitHub automatically — this is
+   a deliberate manual round-trip).
    ========================================================================== */
 
 (function () {
@@ -29,7 +29,7 @@
     container.innerHTML = '';
     entries.forEach((entry, idx) => container.appendChild(renderEntry(entry, idx)));
     const count = document.getElementById('entry-count');
-    count.textContent = entries.length + (entries.length > 1 ? ' liens dans la base' : ' lien dans la base');
+    count.textContent = entries.length + (entries.length > 1 ? ' links in the database' : ' link in the database');
   }
 
   function renderEntry(entry, idx) {
@@ -39,11 +39,11 @@
 
     wrap.innerHTML =
       '<div class="field">' +
-        '<label>Identifiant (slug — généré automatiquement si laissé vide)</label>' +
+        '<label>ID (slug — auto-generated if left blank)</label>' +
         '<input type="text" data-field="id" data-idx="' + idx + '" value="' + escapeAttr(entry.id || '') + '">' +
       '</div>' +
       '<div class="field">' +
-        '<label>Titre</label>' +
+        '<label>Title</label>' +
         '<input type="text" data-field="title" data-idx="' + idx + '" value="' + escapeAttr(entry.title || '') + '">' +
       '</div>' +
       '<div class="field">' +
@@ -51,15 +51,15 @@
         '<input type="url" data-field="url" data-idx="' + idx + '" value="' + escapeAttr(entry.url || '') + '">' +
       '</div>' +
       '<div class="field">' +
-        '<label>Tags (séparés par des virgules — doivent correspondre aux tags de data/problems.json)</label>' +
+        '<label>Tags (comma-separated — should match the tags in data/problems.json)</label>' +
         '<input type="text" data-field="tags" data-idx="' + idx + '" value="' + escapeAttr((entry.tags || []).join(', ')) + '">' +
       '</div>' +
       '<div class="field">' +
-        '<label>Explication (apparaît dans le PDF sous le lien)</label>' +
+        '<label>Explanation (appears in the PDF under the link)</label>' +
         '<textarea data-field="explanation" data-idx="' + idx + '">' + escapeHtml(entry.explanation || '') + '</textarea>' +
       '</div>' +
       '<div class="actions-row">' +
-        '<button type="button" class="btn btn--danger-ghost" data-remove-idx="' + idx + '">Supprimer cette entrée</button>' +
+        '<button type="button" class="btn btn--danger-ghost" data-remove-idx="' + idx + '">Remove this entry</button>' +
       '</div>';
 
     return wrap;
@@ -102,7 +102,7 @@
 
   function exportJson() {
     entries.forEach((e) => {
-      if (!e.id || !e.id.trim()) e.id = slugify(e.title || 'lien');
+      if (!e.id || !e.id.trim()) e.id = slugify(e.title || 'link');
     });
     const blob = new Blob([JSON.stringify(entries, null, 2) + '\n'], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
@@ -122,11 +122,11 @@
     reader.onload = () => {
       try {
         const data = JSON.parse(reader.result);
-        if (!Array.isArray(data)) throw new Error('format invalide');
+        if (!Array.isArray(data)) throw new Error('invalid format');
         entries = data;
         render();
       } catch (e) {
-        alert("Le fichier importé n'est pas un JSON valide de liste de liens (doit être un tableau).");
+        alert('The imported file is not valid JSON for a link list (must be an array).');
       }
     };
     reader.readAsText(file);
@@ -139,7 +139,7 @@
       .replace(/[^a-z0-9]+/g, '-')
       .replace(/(^-|-$)/g, '')
       .slice(0, 40);
-    return s || 'lien';
+    return s || 'link';
   }
 
   function escapeAttr(str) {

@@ -1,10 +1,10 @@
 <!doctype html>
-<html lang="fr">
+<html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Typo Guide Generator</title>
-<meta name="description" content="Compose un guide de correction typographique sur mesure, à partir d'une base de liens éditable et d'un rapport Fontspector.">
+<meta name="description" content="Compose a custom typography correction guide from an editable link database and a Fontspector report.">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>✎</text></svg>">
 <link rel="stylesheet" href="css/style.css">
 </head>
@@ -13,78 +13,78 @@
 
   <header class="masthead">
     <p class="masthead__mark">Typo Guide Generator</p>
-    <h1>Compose un guide de correction sur mesure</h1>
-    <p>Sélectionne les problèmes rencontrés sur ce projet, vérifie les ressources associées, ajoute le rapport Fontspector si besoin — et exporte un PDF prêt à envoyer au designer.</p>
+    <h1>Compose a custom correction guide</h1>
+    <p>Select the problems found on this project, check the related resources, add the Fontspector report if needed — and export a PDF ready to send to the designer.</p>
     <nav class="masthead__nav">
-      <a href="admin.html">Gérer la base de liens</a>
-      <a href="https://fonttools.github.io/fontspector/" target="_blank" rel="noopener">Fontspector (outil officiel)</a>
+      <a href="admin.html">Manage the link database</a>
+      <a href="https://fonttools.github.io/fontspector/" target="_blank" rel="noopener">Fontspector (official tool)</a>
     </nav>
   </header>
 
-  <!-- Étape 1 — problèmes -->
+  <!-- Step 1 — problems -->
   <section class="section" id="section-1">
     <div class="section__head">
       <span class="section__num">01</span>
-      <h2>Sélectionner les problèmes</h2>
+      <h2>Select the problems</h2>
     </div>
-    <p class="section__intro">Coche tout ce qui s'applique à ce projet. La liste de liens de l'étape suivante est calculée à partir de ces choix — reviens ici et reclique sur « Voir les liens » si tu changes d'avis.</p>
-    <div id="problems-list"><!-- rendu par js/app.js --></div>
+    <p class="section__intro">Check everything that applies to this project. The link list in the next step is calculated from these choices — come back here and click "Show links" again if you change your mind.</p>
+    <div id="problems-list"><!-- rendered by js/app.js --></div>
     <div class="actions-row">
-      <button class="btn btn--pencil" id="btn-show-links" type="button">Voir les liens</button>
+      <button class="btn btn--pencil" id="btn-show-links" type="button">Show links</button>
     </div>
   </section>
 
-  <!-- Étape 2 — liens -->
+  <!-- Step 2 — links -->
   <section class="section" id="section-2">
     <div class="section__head">
       <span class="section__num">02</span>
-      <h2>Vérifier les liens</h2>
+      <h2>Review the links</h2>
     </div>
-    <p class="section__intro">Décoche ce qui n'est pas pertinent pour ce projet, ajoute un lien manquant. Cette sélection sera incluse dans le PDF final, classée par problème.</p>
+    <p class="section__intro">Uncheck anything that isn't relevant to this project, add a missing link. This selection will be included in the final PDF, sorted by problem.</p>
 
-    <div id="links-empty-hint" class="empty-hint">Coche au moins un problème à l'étape 1, puis clique sur « Voir les liens ».</div>
+    <div id="links-empty-hint" class="empty-hint">Check at least one problem in step 1, then click "Show links".</div>
     <div id="links-groups"></div>
 
     <div class="add-link-form">
-      <p class="add-link-form__title">Ajouter un lien manuellement</p>
+      <p class="add-link-form__title">Add a link manually</p>
       <div class="field">
-        <label for="ml-title">Titre</label>
-        <input type="text" id="ml-title" placeholder="Ex. Comment dessiner un ß correct">
+        <label for="ml-title">Title</label>
+        <input type="text" id="ml-title" placeholder="e.g. How to draw a correct ß">
       </div>
       <div class="field">
         <label for="ml-url">URL</label>
         <input type="url" id="ml-url" placeholder="https://…">
       </div>
       <div class="field">
-        <label for="ml-explain">Explication (apparaît dans le PDF)</label>
-        <textarea id="ml-explain" placeholder="Une ou deux phrases pour situer le problème et la ressource."></textarea>
+        <label for="ml-explain">Explanation (appears in the PDF)</label>
+        <textarea id="ml-explain" placeholder="A sentence or two to frame the problem and the resource."></textarea>
       </div>
       <div class="field">
-        <label for="ml-tags">Tags (séparés par des virgules)</label>
-        <input type="text" id="ml-tags" placeholder="ex. german, eszett">
+        <label for="ml-tags">Tags (comma-separated)</label>
+        <input type="text" id="ml-tags" placeholder="e.g. german, eszett">
       </div>
       <div class="actions-row" style="margin-top:14px;">
-        <button class="btn btn--secondary" id="btn-add-manual-link" type="button">Ajouter ce lien</button>
+        <button class="btn btn--secondary" id="btn-add-manual-link" type="button">Add this link</button>
       </div>
 
       <div class="json-snippet" id="manual-link-json">
-        <p style="font-size:0.8rem;color:var(--ink-soft);margin:14px 0 4px;">Pour que ce lien reste disponible la prochaine fois (pour toi ou quelqu'un d'autre), copie ceci dans <code>data/links-database.json</code> :</p>
+        <p style="font-size:0.8rem;color:var(--ink-soft);margin:14px 0 4px;">To keep this link available next time (for you or someone else), copy this into <code>data/links-database.json</code>:</p>
         <pre id="manual-link-json-pre"></pre>
       </div>
     </div>
   </section>
 
-  <!-- Étape 3 — fontspector -->
+  <!-- Step 3 — fontspector -->
   <section class="section" id="section-3">
     <div class="section__head">
       <span class="section__num">03</span>
-      <h2>Rapport Fontspector <span style="font-weight:400;color:var(--ink-faint);font-size:0.85rem;">(optionnel)</span></h2>
+      <h2>Fontspector report <span style="font-weight:400;color:var(--ink-faint);font-size:0.85rem;">(optional)</span></h2>
     </div>
-    <p class="section__intro">Dépose le fichier de police pour préremplir son nom, puis importe un rapport Fontspector au format JSON pour l'inclure — hiérarchisé et expliqué — dans le guide.</p>
+    <p class="section__intro">Drop the font file to pre-fill its name, then import a Fontspector JSON report to include it — hierarchized and explained — in the guide.</p>
 
     <div class="dropzone" id="font-dropzone">
-      <p class="dropzone__label">Dépose un .ttf / .otf ici, ou clique pour choisir un fichier</p>
-      <p class="dropzone__hint">Sert uniquement à préremplir le nom de la police dans le guide — rien n'est envoyé nulle part, tout reste dans ton navigateur.</p>
+      <p class="dropzone__label">Drop a .ttf / .otf here, or click to choose a file</p>
+      <p class="dropzone__hint">Only used to pre-fill the font name in the guide — nothing is sent anywhere, everything stays in your browser.</p>
       <input type="file" id="font-file-input" accept=".ttf,.otf,.woff">
     </div>
     <div class="font-loaded" id="font-loaded">
@@ -92,20 +92,20 @@
       <span class="font-loaded__meta" id="font-loaded-meta"></span>
     </div>
 
-    <div class="divider-or">rapport fontspector</div>
+    <div class="divider-or">fontspector report</div>
 
     <div class="field">
-      <label for="fs-file-input">Importer un rapport Fontspector (.json)</label>
+      <label for="fs-file-input">Import a Fontspector report (.json)</label>
       <input type="file" id="fs-file-input" accept=".json,application/json">
     </div>
 
     <details style="margin-top:8px;">
-      <summary style="cursor:pointer;font-size:0.875rem;color:var(--pencil);">Comment obtenir ce fichier ?</summary>
+      <summary style="cursor:pointer;font-size:0.875rem;color:var(--pencil);">How do I get this file?</summary>
       <div style="margin-top:10px;font-size:0.875rem;color:var(--ink-soft);line-height:1.6;">
-        <p style="margin:0 0 8px;"><strong>Option 1 — outil en ligne officiel</strong> (aucune installation) : va sur <a href="https://fonttools.github.io/fontspector/" target="_blank" rel="noopener">fonttools.github.io/fontspector</a>, dépose ta police, lance l'analyse depuis ton navigateur.</p>
-        <p style="margin:0 0 8px;"><strong>Option 2 — ligne de commande</strong>, si Fontspector est installé :</p>
-        <pre style="background:var(--ink);color:var(--paper);padding:10px 12px;border-radius:4px;font-family:var(--font-mono);font-size:0.8rem;overflow-x:auto;margin:0 0 8px;">fontspector --profile googlefonts --json rapport.json MaPolice.ttf</pre>
-        <p style="margin:0;">Importe ensuite le fichier <code>rapport.json</code> obtenu ci-dessus.</p>
+        <p style="margin:0 0 8px;"><strong>Option 1 — official web tool</strong> (no install needed): go to <a href="https://fonttools.github.io/fontspector/" target="_blank" rel="noopener">fonttools.github.io/fontspector</a>, drop your font, run the analysis in your browser.</p>
+        <p style="margin:0 0 8px;"><strong>Option 2 — command line</strong>, if Fontspector is installed:</p>
+        <pre style="background:var(--ink);color:var(--paper);padding:10px 12px;border-radius:4px;font-family:var(--font-mono);font-size:0.8rem;overflow-x:auto;margin:0 0 8px;">fontspector --profile googlefonts --json report.json MyFont.ttf</pre>
+        <p style="margin:0;">Then import the resulting <code>report.json</code> file above.</p>
       </div>
     </details>
 
@@ -117,42 +117,42 @@
     <div class="check-list" id="check-list"></div>
   </section>
 
-  <!-- Étape 4 — génération -->
+  <!-- Step 4 — generate -->
   <section class="section" id="section-4">
     <div class="section__head">
       <span class="section__num">04</span>
-      <h2>Générer le guide</h2>
+      <h2>Generate the guide</h2>
     </div>
-    <p class="section__intro">Dernier réglage avant l'export.</p>
+    <p class="section__intro">One last setting before exporting.</p>
 
     <div class="meta-grid">
       <div class="field">
-        <label for="meta-title">Titre du guide</label>
-        <input type="text" id="meta-title" value="Guide de correction typographique">
+        <label for="meta-title">Guide title</label>
+        <input type="text" id="meta-title" value="Typography Correction Guide">
       </div>
       <div class="field">
-        <label for="meta-project">Projet / police</label>
-        <input type="text" id="meta-project" placeholder="ex. Fontname v0.3">
+        <label for="meta-project">Project / font</label>
+        <input type="text" id="meta-project" placeholder="e.g. Fontname v0.3">
       </div>
       <div class="field">
-        <label for="meta-designer">Designer / fonderie</label>
-        <input type="text" id="meta-designer" placeholder="optionnel">
+        <label for="meta-designer">Designer / foundry</label>
+        <input type="text" id="meta-designer" placeholder="optional">
       </div>
     </div>
     <div class="field">
-      <label for="meta-notes">Note d'intro (optionnel)</label>
-      <textarea id="meta-notes" placeholder="Un mot de contexte pour la personne qui recevra ce guide."></textarea>
+      <label for="meta-notes">Intro note (optional)</label>
+      <textarea id="meta-notes" placeholder="A word of context for whoever receives this guide."></textarea>
     </div>
 
     <div class="generate-panel">
-      <button class="btn btn--pencil btn--lg" id="btn-generate" type="button">Générer le guide (PDF)</button>
-      <p class="generate-panel__note">Tout est généré dans ton navigateur — aucune donnée n'est envoyée à un serveur.</p>
+      <button class="btn btn--pencil btn--lg" id="btn-generate" type="button">Generate the guide (PDF)</button>
+      <p class="generate-panel__note">Everything is generated in your browser — no data is sent to a server.</p>
     </div>
   </section>
 
   <footer class="page-footer">
     <span>Typo Guide Generator</span>
-    <a href="admin.html">Gérer la base de liens →</a>
+    <a href="admin.html">Manage the link database →</a>
   </footer>
 
 </div>

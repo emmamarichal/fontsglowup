@@ -2,85 +2,85 @@
   {
     "id": "latin-accents",
     "category": "Latin",
-    "label": "Accents latins mal faits",
-    "description": "Hauteur, chasse, épaisseur ou position des accents (aigu, grave, circonflexe, tréma, cédille…) incohérentes avec le reste de la police.",
+    "label": "Latin accents poorly drawn",
+    "description": "Height, weight, or position of accents (acute, grave, circumflex, umlaut, cedilla…) inconsistent with the rest of the typeface.",
     "tags": ["latin", "accents", "diacritics"]
   },
   {
     "id": "vietnamese-accents",
-    "category": "Vietnamien",
-    "label": "Accents vietnamiens mal faits",
-    "description": "Empilement ton + voyelle modifiée mal géré (ex. ẩ, ộ, ẫ, ẳ) : collisions, hauteur du système, ordre d'empilement.",
+    "category": "Vietnamese",
+    "label": "Vietnamese accents poorly drawn",
+    "description": "Tone mark + modified vowel stacking handled poorly (e.g. ẩ, ộ, ẫ, ẳ): collisions, system height, stacking order.",
     "tags": ["vietnamese", "accents", "diacritics", "stacking"]
   },
   {
     "id": "comb-accents",
-    "category": "Diacritiques",
-    "label": "Problèmes avec les accents combinants (comb)",
-    "description": "Positionnement dynamique des diacritiques combinants (mark positioning, ancres, GDEF) sur des lettres de base variées.",
+    "category": "Diacritics",
+    "label": "Combining accent (comb) issues",
+    "description": "Dynamic positioning of combining diacritics (mark positioning, anchors, GDEF) over a variety of base letters.",
     "tags": ["combining", "marks", "anchors", "gdef", "diacritics"]
   },
   {
     "id": "outlines",
-    "category": "Dessin",
-    "label": "Outlines mal dessinées",
-    "description": "Points superflus, mauvaises tangentes, overlaps non nettoyés, extrema manquants, mauvaise direction des contours.",
+    "category": "Drawing",
+    "label": "Poorly drawn outlines",
+    "description": "Superfluous points, bad tangents, un-cleaned overlaps, missing extrema, wrong contour direction.",
     "tags": ["outlines", "drawing", "points", "curves"]
   },
   {
     "id": "cyrillic",
-    "category": "Cyrillique",
-    "label": "Lettres cyrilliques mal construites",
-    "description": "Formes calquées sur le latin sans adaptation aux conventions de dessin cyrilliques (ex. а, д, л, я italiques).",
+    "category": "Cyrillic",
+    "label": "Poorly constructed Cyrillic letters",
+    "description": "Forms traced from Latin without adapting to Cyrillic drawing conventions (e.g. italic а, д, л, я).",
     "tags": ["cyrillic"]
   },
   {
     "id": "germandbls",
-    "category": "Latin étendu",
-    "label": "Eszett (ß / ẞ — germandbls) mal dessiné",
-    "description": "Construction incorrecte du ß minuscule ou du ẞ capital, confusion de forme avec β ou ss.",
+    "category": "Extended Latin",
+    "label": "Eszett (ß / ẞ — germandbls) poorly drawn",
+    "description": "Incorrect construction of lowercase ß or capital ẞ, shape confusion with β or ss.",
     "tags": ["german", "eszett", "germandbls"]
   },
   {
     "id": "greek",
-    "category": "Grec",
-    "label": "Lettres grecques mal construites",
-    "description": "Formes calquées sur le latin sans respecter les conventions grecques (formes tonal/polytonique comprises).",
+    "category": "Greek",
+    "label": "Poorly constructed Greek letters",
+    "description": "Forms traced from Latin without respecting Greek conventions (tonal/polytonic forms included).",
     "tags": ["greek"]
   },
   {
     "id": "arabic",
-    "category": "Arabe",
-    "label": "Formes arabes / jointures incorrectes",
-    "description": "Problèmes de jointure entre formes isolée/initiale/médiane/finale, ou de dessin des points diacritiques.",
+    "category": "Arabic",
+    "label": "Incorrect Arabic forms / joining",
+    "description": "Joining issues between isolated/initial/medial/final forms, or poorly drawn diacritic dots.",
     "tags": ["arabic", "joining"]
   },
   {
     "id": "spacing-kerning",
-    "category": "Espacement",
-    "label": "Approches et crénage incohérents",
-    "description": "Chasse irrégulière, paires de crénage manquantes ou incohérentes, rythme visuel perturbé.",
+    "category": "Spacing",
+    "label": "Inconsistent sidebearings and kerning",
+    "description": "Irregular spacing, missing or inconsistent kerning pairs, disrupted visual rhythm.",
     "tags": ["spacing", "kerning"]
   },
   {
     "id": "hinting",
-    "category": "Technique",
-    "label": "Hinting / rendu écran problématique",
-    "description": "Mauvais rendu aux petites tailles sur écran (Windows/ClearType notamment), absence ou mauvais hinting.",
+    "category": "Technical",
+    "label": "Hinting / on-screen rendering issues",
+    "description": "Poor rendering at small sizes on screen (Windows/ClearType in particular), missing or poor hinting.",
     "tags": ["hinting", "rendering"]
   },
   {
     "id": "variable-font",
-    "category": "Technique",
-    "label": "Axes variables mal configurés",
-    "description": "Table STAT, fvar, instances nommées incohérentes, interpolation qui casse entre maîtres.",
+    "category": "Technical",
+    "label": "Poorly configured variable axes",
+    "description": "STAT table, fvar, inconsistent named instances, interpolation that breaks between masters.",
     "tags": ["variable-font", "stat", "fvar"]
   },
   {
     "id": "metadata",
-    "category": "Technique",
-    "label": "Métadonnées / nommage incorrects",
-    "description": "Table name mal remplie, style linking cassé, informations de licence ou de version manquantes.",
+    "category": "Technical",
+    "label": "Incorrect metadata / naming",
+    "description": "Poorly filled name table, broken style linking, missing license or version information.",
     "tags": ["metadata", "naming"]
   }
 ]

@@ -1,9 +1,9 @@
 <!doctype html>
-<html lang="fr">
+<html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Gérer la base de liens — Typo Guide Generator</title>
+<title>Manage the link database — Typo Guide Generator</title>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>✎</text></svg>">
 <link rel="stylesheet" href="css/style.css">
 </head>
@@ -12,34 +12,34 @@
 
   <header class="masthead">
     <p class="masthead__mark">Typo Guide Generator</p>
-    <h1>Gérer la base de liens</h1>
-    <p>Cette base alimente l'étape « Voir les liens » de l'outil. Le site étant statique (GitHub Pages), rien ne s'enregistre automatiquement : édite ici, exporte le JSON, puis remplace <code>data/links-database.json</code> dans le repo et commit.</p>
+    <h1>Manage the link database</h1>
+    <p>This database feeds the "Show links" step of the tool. Since the site is static (GitHub Pages), nothing saves automatically: edit here, export the JSON, then replace <code>data/links-database.json</code> in the repo and commit.</p>
     <nav class="masthead__nav">
-      <a href="index.html">← Retour à l'outil</a>
+      <a href="index.html">← Back to the tool</a>
     </nav>
   </header>
 
   <section class="section">
     <div class="section__head">
-      <h2 style="font-family:var(--font-display);font-weight:500;font-size:1.25rem;margin:0;">Entrées <span id="entry-count" class="pill-count" style="margin-left:6px;"></span></h2>
+      <h2 style="font-family:var(--font-display);font-weight:500;font-size:1.25rem;margin:0;">Entries <span id="entry-count" class="pill-count" style="margin-left:6px;"></span></h2>
     </div>
-    <p class="section__intro" style="margin-left:0;">Chaque tag doit correspondre à un tag utilisé dans <code>data/problems.json</code> pour que le lien apparaisse au bon endroit. Un lien peut avoir plusieurs tags.</p>
+    <p class="section__intro" style="margin-left:0;">Each tag should match a tag used in <code>data/problems.json</code> so the link shows up in the right place. A link can have several tags.</p>
 
     <div id="entries"></div>
 
     <div class="actions-row" style="justify-content:flex-start;margin-top:20px;">
-      <button type="button" class="btn btn--secondary" id="btn-add-entry">+ Ajouter une entrée</button>
+      <button type="button" class="btn btn--secondary" id="btn-add-entry">+ Add an entry</button>
     </div>
   </section>
 
   <section class="section">
     <div class="section__head">
-      <h2 style="font-family:var(--font-display);font-weight:500;font-size:1.25rem;margin:0;">Exporter</h2>
+      <h2 style="font-family:var(--font-display);font-weight:500;font-size:1.25rem;margin:0;">Export</h2>
     </div>
-    <p class="section__intro" style="margin-left:0;">Télécharge le fichier puis remplace <code>data/links-database.json</code> dans ton repo (localement ou directement via l'éditeur de fichier de GitHub), avant de commit &amp; push.</p>
+    <p class="section__intro" style="margin-left:0;">Download the file, then replace <code>data/links-database.json</code> in your repo (locally, or directly via GitHub's file editor), before committing &amp; pushing.</p>
     <div class="actions-row" style="justify-content:flex-start;">
-      <button type="button" class="btn btn--pencil" id="btn-export">Exporter links-database.json</button>
-      <label class="btn btn--secondary" for="import-file" style="cursor:pointer;">Importer un JSON existant
+      <button type="button" class="btn btn--pencil" id="btn-export">Export links-database.json</button>
+      <label class="btn btn--secondary" for="import-file" style="cursor:pointer;">Import an existing JSON
         <input type="file" id="import-file" accept=".json,application/json" style="display:none;">
       </label>
     </div>
@@ -47,7 +47,7 @@
 
   <footer class="page-footer">
     <span>Typo Guide Generator</span>
-    <a href="index.html">← Retour à l'outil</a>
+    <a href="index.html">← Back to the tool</a>
   </footer>
 
 </div>

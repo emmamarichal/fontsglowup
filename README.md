@@ -1,137 +1,139 @@
 # Typo Guide Generator
 
-Un outil pour composer, à la volée, un guide de correction typographique sur mesure : tu coches les problèmes rencontrés sur un projet, l'outil propose les liens pertinents depuis une base éditable, tu ajustes, tu ajoutes en option un rapport [Fontspector](https://github.com/fonttools/fontspector) hiérarchisé et commenté — et tu exportes un PDF prêt à envoyer.
+**🔗 Live site: [emmamarichal.github.io/fontsglowup](https://emmamarichal.github.io/fontsglowup/)**
 
-Site 100% statique, pensé pour GitHub Pages. Aucun backend, aucune donnée envoyée nulle part : tout tourne dans le navigateur.
+A tool for composing, on the fly, a custom typography correction guide: check off the problems found on a project, the tool suggests the relevant links from an editable database, adjust as needed, optionally add a hierarchized and annotated [Fontspector](https://github.com/fonttools/fontspector) report — then export a PDF ready to send.
 
-## Démarrage rapide
+A fully static site, built for GitHub Pages. No backend, no data ever sent anywhere: everything runs in the browser.
 
-1. Active GitHub Pages sur ce repo : **Settings → Pages → Source: Deploy from a branch → `main` / `(root)`**.
-2. Ouvre l'URL générée (`https://<utilisateur>.github.io/<repo>/`).
-3. C'est prêt. La base de liens fournie est volontairement minimale — voir [Remplir la base de liens](#remplir-la-base-de-liens) ci-dessous.
+## Quick start
 
-**Pour tester en local**, sers le dossier via un petit serveur HTTP (le `fetch()` des fichiers JSON ne fonctionne pas en ouvrant `index.html` directement avec `file://`) :
+1. Enable GitHub Pages on this repo: **Settings → Pages → Source: Deploy from a branch → `main` / `(root)`**.
+2. Wait a minute, the site goes live at the URL above.
+3. Done. The bundled link database is intentionally minimal — see [Filling in the link database](#data-links-databasejson--the-link-database) below.
+
+**To test locally** (before pushing, or while the repo is still private), serve the folder with a small HTTP server — `fetch()`-ing the JSON files doesn't work by opening `index.html` directly with `file://`:
 
 ```bash
 python3 -m http.server 8000
-# puis ouvre http://localhost:8000
+# then open http://localhost:8000
 ```
 
-## Structure du repo
+## Repo structure
 
 ```
 .
-├── index.html                    # l'outil (4 étapes)
-├── admin.html                    # éditeur visuel de la base de liens
+├── index.html                    # the tool (4 steps)
+├── admin.html                    # visual editor for the link database
 ├── css/
-│   └── style.css                 # tout le design
+│   └── style.css                 # all the design
 ├── js/
-│   ├── app.js                    # logique de index.html
-│   ├── fontspector.js            # parseur du rapport Fontspector (JSON)
-│   ├── pdf.js                    # génération du PDF (pdfmake)
-│   └── admin.js                  # logique de admin.html
+│   ├── app.js                    # index.html logic
+│   ├── fontspector.js            # Fontspector report parser (JSON)
+│   ├── pdf.js                    # PDF generation (pdfmake)
+│   └── admin.js                  # admin.html logic
 └── data/
-    ├── problems.json             # la liste de checkboxes de l'étape 1
-    ├── links-database.json       # LA base de liens à enrichir
-    └── fontspector-explanations.json  # explications pédagogiques par check-id
+    ├── problems.json             # the checkbox list in step 1
+    ├── links-database.json       # THE link database to fill in
+    └── fontspector-explanations.json  # plain-language explanations per check-id
 ```
 
-Tout est en JavaScript vanilla, sans build ni dépendance à installer. Les seules librairies externes sont chargées via CDN dans `index.html` :
+Everything is vanilla JavaScript, no build step, nothing to install. The only external libraries are loaded via CDN in `index.html`:
 
-- [pdfmake](https://pdfmake.github.io/docs/) — génération du PDF
-- [opentype.js](https://opentype.js.org/) — lecture du nom de la police déposée
+- [pdfmake](https://pdfmake.github.io/docs/) — PDF generation
+- [opentype.js](https://opentype.js.org/) — reading the name of the dropped font
 
-## Comment ça s'articule
+## How it fits together
 
-### `data/problems.json` — les cases à cocher de l'étape 1
+### `data/problems.json` — the checkboxes in step 1
 
-Chaque entrée est un problème que tu peux cocher, avec des `tags` :
+Each entry is a problem you can check, with `tags`:
 
 ```json
 {
   "id": "germandbls",
-  "category": "Latin étendu",
-  "label": "Eszett (ß / ẞ — germandbls) mal dessiné",
-  "description": "Construction incorrecte du ß minuscule ou du ẞ capital…",
+  "category": "Extended Latin",
+  "label": "Eszett (ß / ẞ — germandbls) poorly drawn",
+  "description": "Incorrect construction of lowercase ß or capital ẞ…",
   "tags": ["german", "eszett", "germandbls"]
 }
 ```
 
-`category` regroupe les cases sous un même intertitre dans l'interface. `tags` est ce qui relie ce problème aux liens de la base (ci-dessous) — libre à toi d'inventer tes propres tags, il n'y a pas de liste fermée.
+`category` groups checkboxes under the same subheading in the interface. `tags` is what links this problem to the links database below — feel free to invent your own tags, there's no closed list.
 
-### `data/links-database.json` — LA base de liens
+### `data/links-database.json` — THE link database
 
-C'est le cœur de l'outil, et celle que tu vas le plus modifier :
+This is the heart of the tool, and the one you'll edit the most:
 
 ```json
 {
-  "id": "identifiant-unique",
-  "title": "Titre affiché",
+  "id": "unique-id",
+  "title": "Displayed title",
   "url": "https://...",
   "tags": ["german", "eszett"],
-  "explanation": "Une ou deux phrases : apparaissent dans l'interface ET dans le PDF sous le lien."
+  "explanation": "A sentence or two: shown both in the interface AND in the PDF under the link."
 }
 ```
 
-**Un lien apparaît dès qu'au moins un de ses tags correspond à un tag d'un problème coché.** Un même lien peut donc apparaître sous plusieurs rubriques si ses tags couvrent plusieurs problèmes — c'est voulu : dans le PDF, chaque section « problème » doit être autonome.
+**A link shows up as soon as at least one of its tags matches a tag from a checked problem.** The same link can therefore appear under several headings if its tags cover several problems — that's intentional: in the PDF, each "problem" section should be self-contained.
 
-**Deux façons de l'éditer :**
+**Two ways to edit it:**
 
-1. **`admin.html`** (recommandé) — page dédiée, formulaire par entrée, bouton *Exporter* qui télécharge un `links-database.json` à jour. Tu remplaces ensuite le fichier dans le repo et tu commit.
-2. **Directement le fichier JSON** — c'est juste un tableau, éditable à la main ou via l'éditeur de fichier de GitHub (icône crayon sur la page du fichier, dans le repo).
+1. **`admin.html`** (recommended) — dedicated page, one form per entry, an *Export* button that downloads an up-to-date `links-database.json`. Replace the file in the repo, then commit.
+2. **Directly the JSON file** — it's just an array, editable by hand or via GitHub's file editor (pencil icon on the file's page, in the repo).
 
-Dans l'outil lui-même (`index.html`, étape 2), tu peux aussi ajouter un lien à la volée pour la session en cours ; un encart apparaît alors avec le JSON prêt à copier dans `links-database.json` si tu veux le garder pour la prochaine fois.
+Inside the tool itself (`index.html`, step 2), you can also add a link on the fly for the current session; an inset then appears with the JSON snippet ready to copy into `links-database.json` if you want to keep it for next time.
 
-**La base fournie est volontairement un squelette.** Je n'ai mis que 3 ressources génériques dont je suis sûr (le guide QA de Google Fonts, le repo Fontspector, la spec OpenType) ; le reste, marqué `[EXEMPLE À REMPLACER]`, pointe vers des URLs factices (`example.com/...`) — je n'ai pas voulu inventer de vraies-fausses ressources sur des sujets aussi précis que la construction du ß ou l'empilement des tons vietnamiens. Remplace ces entrées par *tes* liens de référence.
+**The bundled database is deliberately a skeleton.** Only 3 generic resources are included that I'm confident about (the Google Fonts QA guide, the Fontspector repo, the OpenType spec); the rest, marked `[EXAMPLE — REPLACE ME]`, points to placeholder URLs (`example.com/...`) — I didn't want to invent fake-real resources on topics as specific as ß construction or Vietnamese tone-mark stacking. Replace those entries with *your* reference links.
 
-### `data/fontspector-explanations.json` — traduire les checks en langage humain
+### `data/fontspector-explanations.json` — translating checks into plain language
 
-Un rapport Fontspector brut est fait pour des outils, pas pour un designer. Chaque entrée ici associe un morceau d'identifiant de check à une explication en français :
+A raw Fontspector report is built for tools, not for a designer. Each entry here maps a piece of a check identifier to a plain-language explanation:
 
 ```json
 {
   "match": "underline_thickness",
-  "title": "Épaisseur du soulignement incohérente",
-  "explanation": "L'épaisseur du trait de soulignement ne correspond pas à ce qui est attendu…"
+  "title": "Inconsistent underline thickness",
+  "explanation": "The underline stroke thickness doesn't match what's expected…"
 }
 ```
 
-`match` est cherché d'abord en correspondance exacte avec le check-id, puis en *sous-chaîne* (le check-id **contient** `match`) — pratique parce que les check-ids sont souvent hiérarchiques (`opentype/family/underline_thickness`) et que tu n'as pas besoin de connaître l'ID complet et exact.
+`match` is looked up as an exact match against the check-id first, then as a *substring* (the check-id **contains** `match`) — handy since check-ids are often hierarchical (`opentype/family/underline_thickness`) and you don't need to know the full, exact ID.
 
-Je n'ai mis que deux entrées dont je suis certain (elles sont citées telles quelles dans la doc officielle de Fontspector) plus quelques entrées probables à vérifier/corriger à l'usage. **Complète cette base au fil de l'eau** : à chaque nouveau check qui revient souvent dans tes rapports, ajoute une entrée. S'il n'y a pas d'explication pour un check, le message brut de Fontspector s'affiche quand même, et tu peux toujours écrire un commentaire ad hoc directement dans l'interface (voir plus bas) — rien n'est bloquant.
+Only two entries here are ones I'm certain of (they're quoted verbatim in Fontspector's official docs), plus a handful of likely ones worth double-checking as you use them. **Grow this database as you go**: every time a check keeps showing up in your reports, add an entry. If there's no explanation for a check, Fontspector's raw message still displays, and you can always write an ad hoc comment right in the interface (see below) — nothing is a blocker.
 
-## Le rapport Fontspector
+## The Fontspector report
 
-**Pourquoi un import plutôt qu'un vrai bouton « analyser » ?** Fontspector est écrit en Rust et sa version web officielle est un vrai module WASM, compilé et déployé par leur pipeline CI — pas quelque chose qu'on peut proprement embarquer dans un site statique tiers sans dupliquer (et maintenir) leur build. Le choix le plus robuste est donc que ton outil **consomme le rapport JSON** que Fontspector produit, et que ce soit ton interface qui le trie/hiérarchise/explique. C'est aussi ce qui permet à l'outil de fonctionner offline, sans clé API ni service tiers.
+**Why import a report instead of a real "analyze" button?** Fontspector is written in Rust and its official web version is a real WASM module, built and deployed by their own CI pipeline — not something that can cleanly be embedded into a third-party static site without duplicating (and maintaining) their build. The most robust option is therefore for the tool to **consume the JSON report** that Fontspector produces, and let your own interface sort/hierarchize/explain it. It's also what keeps the tool working offline, with no API key or third-party service.
 
-**Obtenir le rapport JSON**, deux options :
+**Getting the JSON report**, two options:
 
-- **Sans rien installer** : [fonttools.github.io/fontspector](https://fonttools.github.io/fontspector/), déposer le fichier, lancer l'analyse dans le navigateur.
-- **En ligne de commande**, si [Fontspector est installé](https://github.com/fonttools/fontspector/blob/main/INSTALLATION.md) :
+- **Without installing anything**: [fonttools.github.io/fontspector](https://fonttools.github.io/fontspector/), drop the file, run the analysis in the browser.
+- **From the command line**, if [Fontspector is installed](https://github.com/fonttools/fontspector/blob/main/INSTALLATION.md):
   ```bash
-  fontspector --profile googlefonts --json rapport.json MaPolice.ttf
+  fontspector --profile googlefonts --json report.json MyFont.ttf
   ```
-  (`--profile universal` ou `--profile opentype` si le profil Google Fonts ne convient pas à ton contexte — voir [USING.md](https://github.com/fonttools/fontspector/blob/main/USING.md) de Fontspector pour le détail des profils.)
+  (`--profile universal` or `--profile opentype` if the Google Fonts profile doesn't fit your context — see Fontspector's [USING.md](https://github.com/fonttools/fontspector/blob/main/USING.md) for details on profiles.)
 
-Importe ensuite ce `rapport.json` dans l'outil (étape 3). Il est hiérarchisé du plus critique au plus informatif : **ERROR → FAIL → WARN → INFO**, chaque check accompagné (si dispo) d'une explication de la base ci-dessus, et d'un champ pour ton propre commentaire. Les checks en **SKIP** et **PASS** sont résumés en un seul compte, pour ne pas noyer les vrais problèmes.
+Then import that `report.json` into the tool (step 3). It's hierarchized from most critical to most informational: **ERROR → FAIL → WARN → INFO**, each check paired (if available) with an explanation from the database above, and a field for your own comment. **SKIP** and **PASS** checks are summarized as a single count, so real problems aren't buried.
 
-### Si le parseur ne reconnaît rien
+### If the parser doesn't recognize anything
 
-Le schéma JSON exact de `fontspector --json` peut évoluer (c'est un outil jeune, réécrit récemment en Rust) — plutôt que de coder en dur des noms de champs qui casseraient au moindre changement de version, `js/fontspector.js` parcourt le rapport et repère tout objet qui *ressemble* à un résultat de check (un statut connu + un identifiant à proximité). Si un jour ça ne trouve vraiment rien, l'app te le signale et inclut quand même le JSON brut en annexe du PDF — rien n'est perdu, mais jette un œil à la fonction `extractChecks()` dans `js/fontspector.js` pour l'ajuster au nouveau format.
+The exact JSON schema of `fontspector --json` can change over time (it's a young tool, recently rewritten in Rust) — rather than hard-coding field names that would break with the next version bump, `js/fontspector.js` walks the report and picks out anything that *looks like* a check result (a known status + a nearby identifier). If it genuinely finds nothing one day, the app tells you and still includes the raw JSON as an appendix in the PDF — nothing is lost, but take a look at the `extractChecks()` function in `js/fontspector.js` to adjust it to the new format.
 
-## Déploiement
+## Deployment
 
-Rien de spécial : GitHub Pages sert des fichiers statiques, ce repo n'en est que ça.
+Nothing special: GitHub Pages serves static files, and that's all this repo is.
 
-1. `Settings → Pages → Source: Deploy from a branch`, branche `main`, dossier `/ (root)`.
-2. Attends une minute, l'URL apparaît en haut de la page Pages.
-3. Chaque `git push` sur `main` republie automatiquement.
+1. `Settings → Pages → Source: Deploy from a branch`, branch `main`, folder `/ (root)`.
+2. Wait a minute, the URL appears at the top of the Pages settings page.
+3. Every `git push` to `main` republishes automatically.
 
-Tous les liens internes du site sont relatifs (`css/style.css`, `js/app.js`, `admin.html`…), donc ça fonctionne aussi bien à la racine d'un domaine `*.github.io` que sous un sous-chemin `*.github.io/nom-du-repo/`.
+All internal links on the site are relative (`css/style.css`, `js/app.js`, `admin.html`…), so it works equally well at the root of a `*.github.io` domain or under a subpath `*.github.io/repo-name/`.
 
-## Limites connues
+## Known limitations
 
-- **Pas de sauvegarde de brouillon** : un rechargement de page vide la sélection en cours. Volontaire pour garder le code simple et fiable — génère ton PDF avant de fermer l'onglet.
-- **La base de liens fournie est un squelette**, voir plus haut.
-- **Le format JSON de Fontspector peut évoluer** — le parseur est défensif mais pas infaillible, voir ci-dessus.
-- Le PDF utilise la police par défaut de pdfmake (Roboto), qui couvre correctement latin étendu, cyrillique, grec et vietnamien — mais pas toutes les écritures (arabe notamment ne s'affichera pas correctement dans le PDF si tu écris du texte arabe dans une explication).
+- **No draft autosave**: reloading the page clears the current selection. This is deliberate, to keep the code simple and reliable — generate your PDF before closing the tab.
+- **The bundled link database is a skeleton**, see above.
+- **Fontspector's JSON format may change** — the parser is defensive but not foolproof, see above.
+- The PDF uses pdfmake's default font (Roboto), which properly covers extended Latin, Cyrillic, Greek, and Vietnamese — but not every script (Arabic in particular won't render correctly in the PDF if you write Arabic text in an explanation).

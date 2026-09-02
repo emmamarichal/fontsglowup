@@ -1,7 +1,7 @@
 /* ==========================================================================
    Typo Guide Generator — app logic
-   Aucune donnée n'est envoyée à un serveur : tout se passe dans le
-   navigateur (lecture des JSON du repo, lecture du .ttf, génération du PDF).
+   No data is ever sent to a server: everything happens in the browser
+   (reading the repo's JSON files, reading the .ttf file, generating the PDF).
    ========================================================================== */
 
 (function () {
@@ -12,12 +12,12 @@
     linksDb: [],
     explanationsDb: [],
     selectedProblemIds: new Set(),
-    autoLinks: [],    // liens calculés à partir des tags, à plat
-    manualLinks: [],  // liens ajoutés à la main pour cette session
-    included: {},     // linkId -> bool (coche/décoche, vaut true par défaut)
+    autoLinks: [],    // links computed from tags, flat list
+    manualLinks: [],  // links added by hand for this session
+    included: {},     // linkId -> bool (checked/unchecked, defaults to true)
     fontMeta: null,
-    fontspectorReport: null, // sortie de Fontspector.parseReport(), annotée
-    checkComments: {}        // 'STATUS-index' -> commentaire libre
+    fontspectorReport: null, // output of Fontspector.parseReport(), annotated
+    checkComments: {}        // 'STATUS-index' -> free-text comment
   };
 
   let manualIdCounter = 1;
@@ -35,7 +35,7 @@
       state.linksDb = linksDb;
       state.explanationsDb = explanationsDb;
     } catch (err) {
-      showToast('Erreur de chargement des données — ' + err.message);
+      showToast('Error loading data — ' + err.message);
       console.error(err);
       return;
     }
@@ -45,12 +45,12 @@
 
   function fetchJSON(path) {
     return fetch(path).then((res) => {
-      if (!res.ok) throw new Error(path + ' introuvable (HTTP ' + res.status + ')');
+      if (!res.ok) throw new Error(path + ' not found (HTTP ' + res.status + ')');
       return res.json();
     });
   }
 
-  /* ---------------------------- Étape 1 : problèmes ---------------------------- */
+  /* ------------------------------ Step 1: problems ------------------------------ */
 
   function renderProblems() {
     const container = document.getElementById('problems-list');
@@ -122,7 +122,7 @@
     return label;
   }
 
-  /* ----------------------------- Étape 2 : liens ------------------------------- */
+  /* -------------------------------- Step 2: links -------------------------------- */
 
   function computeAutoLinks() {
     const selected = state.problems.filter((p) => state.selectedProblemIds.has(p.id));
@@ -140,7 +140,7 @@
 
   function onShowLinks() {
     if (!state.selectedProblemIds.size) {
-      showToast('Coche au moins un problème avant de voir les liens.');
+      showToast('Check at least one problem before showing links.');
       return;
     }
     state.autoLinks = computeAutoLinks();
@@ -167,7 +167,7 @@
 
     if (state.manualLinks.length) {
       anyRendered = true;
-      container.appendChild(renderLinkGroup('Ajoutés manuellement', state.manualLinks, true));
+      container.appendChild(renderLinkGroup('Added manually', state.manualLinks, true));
     }
 
     if (anyRendered) {
@@ -175,8 +175,8 @@
     } else {
       emptyHint.style.display = 'block';
       emptyHint.textContent = state.autoLinks.length === 0 && state.selectedProblemIds.size
-        ? "Aucun lien de la base ne correspond à cette sélection pour l'instant — ajoute-en un manuellement ci-dessous, ou complète data/links-database.json."
-        : 'Coche au moins un problème à l\'étape 1, puis clique sur « Voir les liens ».';
+        ? "No link in the database matches this selection yet — add one manually below, or fill out data/links-database.json."
+        : 'Check at least one problem in step 1, then click "Show links".';
     }
   }
 
@@ -217,7 +217,7 @@
     if (isManual) {
       const badge = document.createElement('span');
       badge.className = 'link-row__manual-badge';
-      badge.textContent = 'manuel';
+      badge.textContent = 'manual';
       titleEl.appendChild(badge);
     }
     body.appendChild(titleEl);
@@ -256,7 +256,7 @@
       const removeBtn = document.createElement('button');
       removeBtn.type = 'button';
       removeBtn.className = 'btn btn--danger-ghost link-row__remove';
-      removeBtn.textContent = 'Supprimer';
+      removeBtn.textContent = 'Remove';
       removeBtn.addEventListener('click', () => {
         state.manualLinks = state.manualLinks.filter((l) => l.id !== link.id);
         delete state.included[link.id];
@@ -280,7 +280,7 @@
     const tagsRaw = tagsInput.value.trim();
 
     if (!title || !url) {
-      showToast('Un titre et une URL sont nécessaires.');
+      showToast('A title and a URL are required.');
       return;
     }
 
@@ -321,10 +321,10 @@
       .replace(/[^a-z0-9]+/g, '-')
       .replace(/(^-|-$)/g, '')
       .slice(0, 40);
-    return s || 'lien';
+    return s || 'link';
   }
 
-  /* ------------------------- Étape 3 : police + fontspector --------------------- */
+  /* ------------------------- Step 3: font + fontspector -------------------------- */
 
   function onFontFile(file) {
     if (!file) return;
@@ -333,7 +333,7 @@
       try {
         font = opentype.parse(buffer);
       } catch (err) {
-        showToast("Ce fichier n'a pas pu être lu comme une police valide.");
+        showToast("This file couldn't be read as a valid font.");
         console.error(err);
         return;
       }
@@ -343,13 +343,13 @@
 
       document.getElementById('font-loaded-name').textContent = family;
       document.getElementById('font-loaded-meta').textContent =
-        font.glyphs.length + ' glyphes' + (version ? ' — ' + version : '');
+        font.glyphs.length + ' glyphs' + (version ? ' — ' + version : '');
       document.getElementById('font-loaded').classList.add('is-visible');
 
       const projectInput = document.getElementById('meta-project');
       if (!projectInput.value) projectInput.value = family;
     }).catch((err) => {
-      showToast('Impossible de lire ce fichier.');
+      showToast('Could not read this file.');
       console.error(err);
     });
   }
@@ -369,7 +369,7 @@
       try {
         json = JSON.parse(reader.result);
       } catch (err) {
-        showToast("Ce fichier n'est pas un JSON valide.");
+        showToast('This file is not valid JSON.');
         return;
       }
       const parsed = Fontspector.parseReport(json);
@@ -400,8 +400,8 @@
 
     const total = fs.checks.length;
     document.getElementById('report-status-title').textContent = total
-      ? total + ' résultats détectés dans le rapport'
-      : "Le rapport a été chargé, mais sa structure n'a pas pu être analysée automatiquement.";
+      ? total + ' results detected in the report'
+      : "The report was loaded, but its structure couldn't be automatically parsed.";
 
     const summary = document.getElementById('report-status-summary');
     summary.innerHTML = '';
@@ -419,7 +419,7 @@
       const raw = document.createElement('div');
       raw.className = 'empty-hint';
       raw.style.textAlign = 'left';
-      raw.innerHTML = '<p style="margin:0;">Structure inattendue : le contenu brut sera tout de même inclus en annexe du PDF pour que rien ne soit perdu. Si ta version de Fontspector a changé son format de sortie, jette un œil à <code>js/fontspector.js</code>.</p>';
+      raw.innerHTML = '<p style="margin:0;">Unexpected structure: the raw content will still be included as an appendix in the PDF so nothing is lost. If your Fontspector version has changed its output format, take a look at <code>js/fontspector.js</code>.</p>';
       list.appendChild(raw);
       return;
     }
@@ -436,11 +436,11 @@
 
     const collapsedParts = ['SKIP', 'PASS']
       .filter((s) => fs.counts[s])
-      .map((s) => fs.counts[s] + ' ' + (s === 'PASS' ? 'checks réussis' : 'checks skip'));
+      .map((s) => fs.counts[s] + ' ' + (s === 'PASS' ? 'checks passed' : 'checks skipped'));
     if (collapsedParts.length) {
       const p = document.createElement('p');
       p.className = 'collapsed-summary';
-      p.textContent = collapsedParts.join(' · ') + ' — non détaillés dans le guide.';
+      p.textContent = collapsedParts.join(' · ') + ' — not detailed in the guide.';
       list.appendChild(p);
     }
   }
@@ -475,7 +475,7 @@
       const exp = document.createElement('p');
       exp.className = 'check-card__explain';
       const strong = document.createElement('strong');
-      strong.textContent = (check.explanationTitle || 'Comment corriger') + ' — ';
+      strong.textContent = (check.explanationTitle || 'How to fix it') + ' — ';
       exp.appendChild(strong);
       exp.appendChild(document.createTextNode(check.explanation));
       card.appendChild(exp);
@@ -487,7 +487,7 @@
 
     const label = document.createElement('label');
     label.setAttribute('for', 'comment-' + key);
-    label.textContent = 'Ajouter un commentaire (apparaît dans le PDF)';
+    label.textContent = 'Add a comment (appears in the PDF)';
     commentWrap.appendChild(label);
 
     const textarea = document.createElement('textarea');
@@ -502,12 +502,12 @@
     return card;
   }
 
-  /* ----------------------------- Étape 4 : génération --------------------------- */
+  /* --------------------------------- Step 4: generate ----------------------------- */
 
   function onGenerate() {
     const hasIncludedLink = Object.keys(state.included).some((id) => state.included[id]);
     if (!hasIncludedLink && !state.fontspectorReport) {
-      showToast('Sélectionne au moins un lien ou importe un rapport Fontspector avant de générer.');
+      showToast('Select at least one link or import a Fontspector report before generating.');
       return;
     }
 
@@ -524,13 +524,13 @@
     const manualIncluded = state.manualLinks.filter((l) => state.included[l.id] !== false);
     if (manualIncluded.length) {
       groups.push({
-        problemLabel: 'Ajoutés manuellement',
+        problemLabel: 'Added manually',
         links: manualIncluded.map((l) => ({ title: l.title, url: l.url, explanation: l.explanation }))
       });
     }
 
     const payload = {
-      title: document.getElementById('meta-title').value.trim() || 'Guide de correction typographique',
+      title: document.getElementById('meta-title').value.trim() || 'Typography Correction Guide',
       projectName: document.getElementById('meta-project').value.trim(),
       designerName: document.getElementById('meta-designer').value.trim(),
       notes: document.getElementById('meta-notes').value.trim(),
@@ -542,14 +542,14 @@
 
     try {
       TypoPDF.generate(payload);
-      showToast('PDF généré.');
+      showToast('PDF generated.');
     } catch (err) {
       console.error(err);
-      showToast('Erreur lors de la génération du PDF — voir la console.');
+      showToast('Error while generating the PDF — see the console.');
     }
   }
 
-  /* ---------------------------------- Divers ------------------------------------ */
+  /* ----------------------------------- Misc ---------------------------------------- */
 
   let toastTimer = null;
   function showToast(msg) {

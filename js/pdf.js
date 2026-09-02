@@ -17,9 +17,9 @@ const TypoPDF = (function () {
   };
 
   const STATUS_LABEL = {
-    ERROR: 'ERREUR',
-    FAIL: 'À CORRIGER',
-    WARN: 'À VÉRIFIER',
+    ERROR: 'ERROR',
+    FAIL: 'TO FIX',
+    WARN: 'TO REVIEW',
     INFO: 'INFO'
   };
 
@@ -35,21 +35,21 @@ const TypoPDF = (function () {
       if (typeof pdfFonts !== 'undefined' && pdfFonts && pdfFonts.pdfMake && pdfFonts.pdfMake.vfs) {
         pdfMake.vfs = pdfFonts.pdfMake.vfs;
       }
-    } catch (e) { /* vfs déjà configuré par le script vfs_fonts.js lui-même */ }
+    } catch (e) { /* vfs already configured by the vfs_fonts.js script itself */ }
   }
 
   function formatDate(d) {
-    return d.toLocaleDateString('fr-FR', { year: 'numeric', month: 'long', day: 'numeric' });
+    return d.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
   }
 
   function buildCover(payload) {
     const content = [];
-    content.push({ text: payload.title || 'Guide de correction typographique', style: 'h1', margin: [0, 0, 0, 6] });
+    content.push({ text: payload.title || 'Typography Correction Guide', style: 'h1', margin: [0, 0, 0, 6] });
 
     const subLines = [];
     if (payload.projectName) subLines.push(payload.projectName);
     if (payload.fontMeta && payload.fontMeta.family) subLines.push(payload.fontMeta.family);
-    if (payload.designerName) subLines.push('pour ' + payload.designerName);
+    if (payload.designerName) subLines.push('for ' + payload.designerName);
     if (subLines.length) {
       content.push({ text: subLines.join(' — '), style: 'subtitle', margin: [0, 0, 0, 4] });
     }
@@ -66,8 +66,8 @@ const TypoPDF = (function () {
   function buildLinksSection(groups) {
     if (!groups || !groups.length) return [];
     const content = [];
-    content.push({ text: 'Points à corriger', style: 'h2', margin: [0, 26, 0, 4] });
-    content.push({ text: 'Liens et ressources sélectionnés pour ce projet, classés par problème identifié.', style: 'sectionIntro', margin: [0, 0, 0, 14] });
+    content.push({ text: 'Points to fix', style: 'h2', margin: [0, 26, 0, 4] });
+    content.push({ text: 'Links and resources selected for this project, sorted by the issue identified.', style: 'sectionIntro', margin: [0, 0, 0, 14] });
 
     groups.forEach((group) => {
       if (!group.links.length) return;
@@ -100,14 +100,14 @@ const TypoPDF = (function () {
   function buildFontspectorSection(fs, checkComments) {
     if (!fs) return [];
     const content = [];
-    content.push({ text: 'Rapport Fontspector', style: 'h2', margin: [0, 30, 0, 4], pageBreak: 'before' });
+    content.push({ text: 'Fontspector Report', style: 'h2', margin: [0, 30, 0, 4], pageBreak: 'before' });
     content.push({
-      text: 'Contrôle qualité automatisé du fichier de police, du plus critique (ERREUR) au plus informatif (INFO). Les niveaux SKIP et PASS sont résumés en fin de section.',
+      text: 'Automated quality control of the font file, from most critical (ERROR) to most informational (INFO). SKIP and PASS levels are summarized at the end of this section.',
       style: 'sectionIntro',
       margin: [0, 0, 0, 12]
     });
 
-    // Résumé chiffré
+    // Numeric summary
     const order = ['ERROR', 'FAIL', 'WARN', 'INFO', 'SKIP', 'PASS'];
     const summaryCols = order
       .filter((s) => fs.counts[s] > 0)
@@ -140,7 +140,7 @@ const TypoPDF = (function () {
         if (check.explanation) {
           stack.push({
             text: [
-              { text: (check.explanationTitle || 'Comment corriger : ') + ' ', bold: true },
+              { text: (check.explanationTitle || 'How to fix it: ') + ' ', bold: true },
               check.explanation
             ],
             style: 'checkExplain',
@@ -149,7 +149,7 @@ const TypoPDF = (function () {
         }
         if (comment) {
           stack.push({
-            text: [{ text: 'Note : ', bold: true, color: COLORS.pencilInk }, comment],
+            text: [{ text: 'Note: ', bold: true, color: COLORS.pencilInk }, comment],
             style: 'checkComment',
             margin: [0, 4, 0, 0]
           });
@@ -177,7 +177,7 @@ const TypoPDF = (function () {
     });
 
     const collapsed = ['SKIP', 'PASS'].filter((s) => fs.counts[s] > 0)
-      .map((s) => fs.counts[s] + ' checks en ' + (s === 'PASS' ? 'réussite' : 'skip (non applicables)'))
+      .map((s) => fs.counts[s] + ' checks ' + (s === 'PASS' ? 'passed' : 'skipped (not applicable)'))
       .join(' · ');
     if (collapsed) {
       content.push({ text: collapsed, style: 'collapsedNote', margin: [0, 18, 0, 0] });
@@ -198,7 +198,7 @@ const TypoPDF = (function () {
       pageSize: 'A4',
       pageMargins: [48, 56, 48, 56],
       info: {
-        title: payload.title || 'Guide de correction typographique'
+        title: payload.title || 'Typography Correction Guide'
       },
       content: content,
       styles: {
@@ -229,20 +229,20 @@ const TypoPDF = (function () {
         return {
           margin: [48, 0, 48, 0],
           columns: [
-            { text: payload.title || 'Guide de correction typographique', fontSize: 8, color: COLORS.faint },
+            { text: payload.title || 'Typography Correction Guide', fontSize: 8, color: COLORS.faint },
             { text: currentPage + ' / ' + pageCount, alignment: 'right', fontSize: 8, color: COLORS.faint }
           ]
         };
       }
     };
 
-    const safeName = (payload.projectName || payload.title || 'guide-typo')
+    const safeName = (payload.projectName || payload.title || 'typo-guide')
       .toLowerCase()
       .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
       .replace(/[^a-z0-9]+/g, '-')
       .replace(/(^-|-$)/g, '');
 
-    pdfMake.createPdf(docDefinition).download((safeName || 'guide-typo') + '.pdf');
+    pdfMake.createPdf(docDefinition).download((safeName || 'typo-guide') + '.pdf');
   }
 
   return { generate: generate };
