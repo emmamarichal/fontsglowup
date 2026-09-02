@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Gérer la base de liens — Typo Guide Generator</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>✎</text></svg>">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<div class="page">
+
+  <header class="masthead">
+    <p class="masthead__mark">Typo Guide Generator</p>
+    <h1>Gérer la base de liens</h1>
+    <p>Cette base alimente l'étape « Voir les liens » de l'outil. Le site étant statique (GitHub Pages), rien ne s'enregistre automatiquement : édite ici, exporte le JSON, puis remplace <code>data/links-database.json</code> dans le repo et commit.</p>
+    <nav class="masthead__nav">
+      <a href="index.html">← Retour à l'outil</a>
+    </nav>
+  </header>
+
+  <section class="section">
+    <div class="section__head">
+      <h2 style="font-family:var(--font-display);font-weight:500;font-size:1.25rem;margin:0;">Entrées <span id="entry-count" class="pill-count" style="margin-left:6px;"></span></h2>
+    </div>
+    <p class="section__intro" style="margin-left:0;">Chaque tag doit correspondre à un tag utilisé dans <code>data/problems.json</code> pour que le lien apparaisse au bon endroit. Un lien peut avoir plusieurs tags.</p>
+
+    <div id="entries"></div>
+
+    <div class="actions-row" style="justify-content:flex-start;margin-top:20px;">
+      <button type="button" class="btn btn--secondary" id="btn-add-entry">+ Ajouter une entrée</button>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="section__head">
+      <h2 style="font-family:var(--font-display);font-weight:500;font-size:1.25rem;margin:0;">Exporter</h2>
+    </div>
+    <p class="section__intro" style="margin-left:0;">Télécharge le fichier puis remplace <code>data/links-database.json</code> dans ton repo (localement ou directement via l'éditeur de fichier de GitHub), avant de commit &amp; push.</p>
+    <div class="actions-row" style="justify-content:flex-start;">
+      <button type="button" class="btn btn--pencil" id="btn-export">Exporter links-database.json</button>
+      <label class="btn btn--secondary" for="import-file" style="cursor:pointer;">Importer un JSON existant
+        <input type="file" id="import-file" accept=".json,application/json" style="display:none;">
+      </label>
+    </div>
+  </section>
+
+  <footer class="page-footer">
+    <span>Typo Guide Generator</span>
+    <a href="index.html">← Retour à l'outil</a>
+  </footer>
+
+</div>
+
+<script src="js/admin.js"></script>
+</body>
+</html>

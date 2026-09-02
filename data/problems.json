@@ -1,0 +1,86 @@
+[
+  {
+    "id": "latin-accents",
+    "category": "Latin",
+    "label": "Accents latins mal faits",
+    "description": "Hauteur, chasse, épaisseur ou position des accents (aigu, grave, circonflexe, tréma, cédille…) incohérentes avec le reste de la police.",
+    "tags": ["latin", "accents", "diacritics"]
+  },
+  {
+    "id": "vietnamese-accents",
+    "category": "Vietnamien",
+    "label": "Accents vietnamiens mal faits",
+    "description": "Empilement ton + voyelle modifiée mal géré (ex. ẩ, ộ, ẫ, ẳ) : collisions, hauteur du système, ordre d'empilement.",
+    "tags": ["vietnamese", "accents", "diacritics", "stacking"]
+  },
+  {
+    "id": "comb-accents",
+    "category": "Diacritiques",
+    "label": "Problèmes avec les accents combinants (comb)",
+    "description": "Positionnement dynamique des diacritiques combinants (mark positioning, ancres, GDEF) sur des lettres de base variées.",
+    "tags": ["combining", "marks", "anchors", "gdef", "diacritics"]
+  },
+  {
+    "id": "outlines",
+    "category": "Dessin",
+    "label": "Outlines mal dessinées",
+    "description": "Points superflus, mauvaises tangentes, overlaps non nettoyés, extrema manquants, mauvaise direction des contours.",
+    "tags": ["outlines", "drawing", "points", "curves"]
+  },
+  {
+    "id": "cyrillic",
+    "category": "Cyrillique",
+    "label": "Lettres cyrilliques mal construites",
+    "description": "Formes calquées sur le latin sans adaptation aux conventions de dessin cyrilliques (ex. а, д, л, я italiques).",
+    "tags": ["cyrillic"]
+  },
+  {
+    "id": "germandbls",
+    "category": "Latin étendu",
+    "label": "Eszett (ß / ẞ — germandbls) mal dessiné",
+    "description": "Construction incorrecte du ß minuscule ou du ẞ capital, confusion de forme avec β ou ss.",
+    "tags": ["german", "eszett", "germandbls"]
+  },
+  {
+    "id": "greek",
+    "category": "Grec",
+    "label": "Lettres grecques mal construites",
+    "description": "Formes calquées sur le latin sans respecter les conventions grecques (formes tonal/polytonique comprises).",
+    "tags": ["greek"]
+  },
+  {
+    "id": "arabic",
+    "category": "Arabe",
+    "label": "Formes arabes / jointures incorrectes",
+    "description": "Problèmes de jointure entre formes isolée/initiale/médiane/finale, ou de dessin des points diacritiques.",
+    "tags": ["arabic", "joining"]
+  },
+  {
+    "id": "spacing-kerning",
+    "category": "Espacement",
+    "label": "Approches et crénage incohérents",
+    "description": "Chasse irrégulière, paires de crénage manquantes ou incohérentes, rythme visuel perturbé.",
+    "tags": ["spacing", "kerning"]
+  },
+  {
+    "id": "hinting",
+    "category": "Technique",
+    "label": "Hinting / rendu écran problématique",
+    "description": "Mauvais rendu aux petites tailles sur écran (Windows/ClearType notamment), absence ou mauvais hinting.",
+    "tags": ["hinting", "rendering"]
+  },
+  {
+    "id": "variable-font",
+    "category": "Technique",
+    "label": "Axes variables mal configurés",
+    "description": "Table STAT, fvar, instances nommées incohérentes, interpolation qui casse entre maîtres.",
+    "tags": ["variable-font", "stat", "fvar"]
+  },
+  {
+    "id": "metadata",
+    "category": "Technique",
+    "label": "Métadonnées / nommage incorrects",
+    "description": "Table name mal remplie, style linking cassé, informations de licence ou de version manquantes.",
+    "tags": ["metadata", "naming"]
+  }
+]

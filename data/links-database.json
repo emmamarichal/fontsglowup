@@ -1,0 +1,65 @@
+[
+  {
+    "id": "gf-guide-qa",
+    "title": "Google Fonts — Guide QA (comprendre les niveaux ERROR/FAIL/WARN/INFO)",
+    "url": "https://googlefonts.github.io/gf-guide/qa.html",
+    "tags": ["technical", "qa", "outlines", "hinting", "metadata"],
+    "explanation": "Explique la hiérarchie des niveaux de sévérité utilisés par Fontspector/Fontbakery et comment les interpréter sans paniquer."
+  },
+  {
+    "id": "fontspector-repo",
+    "title": "Fontspector — dépôt officiel et documentation",
+    "url": "https://github.com/fonttools/fontspector",
+    "tags": ["technical", "qa", "hinting", "metadata", "variable-font"],
+    "explanation": "Le dépôt de l'outil de contrôle qualité utilisé pour générer le rapport inclus dans ce guide : liste des checks, profils disponibles, installation."
+  },
+  {
+    "id": "opentype-spec",
+    "title": "OpenType Specification — Microsoft Typography",
+    "url": "https://learn.microsoft.com/en-us/typography/opentype/spec/",
+    "tags": ["technical", "metadata", "variable-font", "hinting"],
+    "explanation": "Référence technique complète du format OpenType : tables, structure, exigences — utile pour comprendre l'origine d'un FAIL technique."
+  },
+  {
+    "id": "EXEMPLE-germandbls",
+    "title": "[EXEMPLE À REMPLACER] Construction correcte du ß / ẞ (Eszett)",
+    "url": "https://example.com/remplace-moi-par-ta-ressource-eszett",
+    "tags": ["german", "eszett", "germandbls"],
+    "explanation": "Remplace cette entrée par le lien que tu donnes réellement à tes designers pour ce problème (construction du ß minuscule, du ẞ capital, différences avec β)."
+  },
+  {
+    "id": "EXEMPLE-vietnamese",
+    "title": "[EXEMPLE À REMPLACER] Empilement des tons vietnamiens",
+    "url": "https://example.com/remplace-moi-par-ta-ressource-vietnamien",
+    "tags": ["vietnamese", "accents", "diacritics", "stacking"],
+    "explanation": "Remplace par ta ressource de référence sur l'empilement voyelle + ton en vietnamien."
+  },
+  {
+    "id": "EXEMPLE-cyrillic",
+    "title": "[EXEMPLE À REMPLACER] Conventions de dessin cyrilliques",
+    "url": "https://example.com/remplace-moi-par-ta-ressource-cyrillique",
+    "tags": ["cyrillic"],
+    "explanation": "Remplace par ta ressource de référence sur les formes cyrilliques (italiques notamment)."
+  },
+  {
+    "id": "EXEMPLE-outlines",
+    "title": "[EXEMPLE À REMPLACER] Bonnes pratiques de dessin d'outlines",
+    "url": "https://example.com/remplace-moi-par-ta-ressource-outlines",
+    "tags": ["outlines", "drawing", "points", "curves"],
+    "explanation": "Remplace par ton guide de référence sur les extrema, la direction des contours, le nettoyage des overlaps, etc."
+  },
+  {
+    "id": "EXEMPLE-comb-marks",
+    "title": "[EXEMPLE À REMPLACER] Positionnement des marques combinantes (anchors)",
+    "url": "https://example.com/remplace-moi-par-ta-ressource-marks",
+    "tags": ["combining", "marks", "anchors", "gdef"],
+    "explanation": "Remplace par ta ressource sur le mark positioning / la table GDEF / les ancres."
+  },
+  {
+    "id": "EXEMPLE-kerning",
+    "title": "[EXEMPLE À REMPLACER] Crénage et approches",
+    "url": "https://example.com/remplace-moi-par-ta-ressource-kerning",
+    "tags": ["spacing", "kerning"],
+    "explanation": "Remplace par ton guide de référence sur l'espacement et le crénage."
+  }
+]

@@ -1,0 +1,52 @@
+[
+  {
+    "match": "underline_thickness",
+    "title": "Épaisseur du soulignement incohérente",
+    "explanation": "L'épaisseur du trait de soulignement (underlineThickness dans la table post) ne correspond pas à ce qui est attendu pour la famille. Vérifie que la valeur est cohérente entre tous les styles (regular, bold, italic…)."
+  },
+  {
+    "match": "panose_familytype",
+    "title": "Classification PANOSE incorrecte",
+    "explanation": "Le premier octet PANOSE (bFamilyType) ne correspond pas au type de police attendu (Latin Text, etc.). C'est une métadonnée de classification utilisée par certains systèmes pour choisir une police de substitution — à corriger dans les infos OS/2."
+  },
+  {
+    "match": "dotted_circle",
+    "title": "Cercle pointillé manquant",
+    "explanation": "Le glyphe du cercle pointillé (U+25CC) est utilisé pour prévisualiser des marques diacritiques isolées ; s'il manque, certains outils ne peuvent pas afficher correctement les marques hors contexte."
+  },
+  {
+    "match": "soft_dotted",
+    "title": "Point du i/j non retiré sous accent (soft-dotted)",
+    "explanation": "Sur des caractères comme i, j (et leurs équivalents dans d'autres écritures), le point doit disparaître quand un accent est ajouté au-dessus. Vérifie les glyphes composés concernés."
+  },
+  {
+    "match": "kerning",
+    "title": "Paires de crénage",
+    "explanation": "Problème détecté dans les paires de crénage (manquantes, redondantes ou en conflit avec les classes). Relis la table GPOS / ton fichier de kerning."
+  },
+  {
+    "match": "fvar",
+    "title": "Table fvar (axes variables)",
+    "explanation": "Problème sur la définition des axes variables ou des instances nommées. Vérifie les valeurs min/max/default et les noms d'instances dans ta source variable."
+  },
+  {
+    "match": "STAT",
+    "title": "Table STAT",
+    "explanation": "La table STAT (qui décrit les axes pour les applications) est absente, incomplète ou incohérente avec les instances de la table fvar."
+  },
+  {
+    "match": "glyph_coverage",
+    "title": "Couverture de glyphes insuffisante",
+    "explanation": "Certains caractères attendus pour le jeu de caractères ciblé (ex. Latin Core/Plus, Cyrillic…) ne sont pas présents dans la police."
+  },
+  {
+    "match": "hinting",
+    "title": "Hinting",
+    "explanation": "Problème lié aux instructions de hinting (ou à leur absence), qui affecte le rendu aux petites tailles sur certains systèmes."
+  },
+  {
+    "match": "name/",
+    "title": "Table name (métadonnées de nommage)",
+    "explanation": "Un des champs de la table name (nom de famille, sous-famille, copyright, version…) est manquant, mal formé ou incohérent entre styles."
+  }
+]
