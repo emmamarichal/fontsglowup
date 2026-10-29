@@ -1,10 +1,20 @@
 /* ==========================================================================
    Suggest links — additive only, no editing/removal of the live database.
-   Nothing here writes anywhere: "Create pull request" just opens GitHub's
-   own "new file" form, pre-filled, in a new tab. GitHub handles the
-   fork + branch + pull request from there — the repo owner reviews and
-   merges (or doesn't) like any other PR. This page cannot touch the live
-   database by itself.
+
+   This page never writes anywhere by itself. "Copy links & open GitHub"
+   copies the new entries to the clipboard and opens GitHub's real "edit
+   this file" page for data/links-database.json in a new tab — the
+   contributor pastes, then commits. If they don't have write access,
+   GitHub forks the repo for them automatically and proposes their commit
+   back as a pull request, showing a normal diff against the real file
+   (no extra files, no separate proposal folder). The repo owner reviews
+   and merges like any other PR.
+
+   Why not fully automatic? Pre-filling the *diff* of an existing file via
+   a plain URL isn't something GitHub supports (only brand-new files can
+   be pre-filled that way) — doing this without a manual paste step would
+   require a backend holding write credentials, which a static site
+   can't safely have. One paste, in exchange for no secrets anywhere.
    ========================================================================== */
 
 (function () {
@@ -14,6 +24,8 @@
   const REPO_OWNER = 'emmamarichal';
   const REPO_NAME = 'fontsglowup';
   const REPO_BRANCH = 'main';
+  const DB_PATH = 'data/links-database.json';
+  const TUTORIALS_DB_PATH = 'data/tutorials.json';
 
   let entries = [{ title: '', url: '', tags: '', explanation: '' }];
   let knownTags = [];
@@ -112,9 +124,24 @@
     });
 
     document.getElementById('btn-create-pr').addEventListener('click', onCreatePR);
+    document.getElementById('btn-copy-again').addEventListener('click', () => {
+      const text = document.getElementById('pr-preview-pre').textContent;
+      copyToClipboard(text).then((ok) => {
+        showToast(ok ? 'Copied.' : "Couldn't copy automatically — select the text and copy it by hand.");
+      });
+    });
+
+    document.getElementById('btn-create-tutorial-file').addEventListener('click', onCreateTutorialFile);
+    document.getElementById('btn-create-tutorial-entry').addEventListener('click', onCreateTutorialEntry);
+    document.getElementById('btn-copy-tutorial-again').addEventListener('click', () => {
+      const text = document.getElementById('tutorial-preview-pre').textContent;
+      copyToClipboard(text).then((ok) => {
+        showToast(ok ? 'Copied.' : "Couldn't copy automatically — select the text and copy it by hand.");
+      });
+    });
   }
 
-  function onCreatePR() {
+  function buildPayload() {
     const usable = entries
       .map((e) => ({
         title: e.title.trim(),
@@ -124,15 +151,9 @@
       }))
       .filter((e) => e.title || e.url || e.tags || e.explanation);
 
-    if (!usable.length) {
-      showToast('Add at least one link first.');
-      return;
-    }
+    if (!usable.length) return { error: 'Add at least one link first.' };
     const invalid = usable.filter((e) => !e.title || !e.url);
-    if (invalid.length) {
-      showToast('Every link needs at least a title and a URL.');
-      return;
-    }
+    if (invalid.length) return { error: 'Every link needs at least a title and a URL.' };
 
     const usedIds = new Set();
     const payload = usable.map((e) => {
@@ -148,37 +169,128 @@
         explanation: e.explanation
       };
     });
+    return { payload: payload };
+  }
 
-    const content = JSON.stringify(payload, null, 2) + '\n';
+  // Formats each new entry as a standalone, comma-terminated object,
+  // indented one level in — meant to be pasted right after the array's
+  // opening "[" in data/links-database.json, before the existing entries.
+  // That spot (rather than before the closing "]") means never having to
+  // worry about whether the previous last entry already ends in a comma.
+  function buildSnippet(payload) {
+    return payload.map((entry) => {
+      const json = JSON.stringify(entry, null, 2);
+      return json.split('\n').map((line) => '  ' + line).join('\n');
+    }).join(',\n') + ',';
+  }
+
+  async function onCreatePR() {
+    const result = buildPayload();
+    if (result.error) {
+      showToast(result.error);
+      return;
+    }
+
+    const snippet = buildSnippet(result.payload);
+    showPreview(snippet);
+
+    const editUrl = 'https://github.com/' + REPO_OWNER + '/' + REPO_NAME + '/edit/' + REPO_BRANCH + '/' + DB_PATH;
+    // Open first, synchronously, so popup blockers still see this as a
+    // direct result of the click — the clipboard write below is async.
+    window.open(editUrl, '_blank', 'noopener');
+
+    const copied = await copyToClipboard(snippet);
+    showToast(copied
+      ? 'Copied — GitHub opened in a new tab. Paste right after the opening [ .'
+      : "GitHub opened in a new tab. Couldn't auto-copy — copy the snippet below by hand.");
+  }
+
+  async function copyToClipboard(text) {
+    try {
+      await navigator.clipboard.writeText(text);
+      return true;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  function showPreview(snippet) {
+    const box = document.getElementById('pr-preview');
+    const pre = document.getElementById('pr-preview-pre');
+    pre.textContent = snippet;
+    box.classList.add('is-visible');
+  }
+
+  // --- Tutorials ------------------------------------------------------------
+  // A tutorial touches two files, so it's two explicit steps rather than one
+  // button: (1) create the .md file — a brand-new file, so GitHub's URL
+  // pre-fill trick works cleanly; (2) copy its entry for data/tutorials.json
+  // and open that file for editing, same pattern as the links flow above.
+  // Both steps derive the same filename from the title, so as long as the
+  // title isn't changed between clicks, they stay in sync.
+
+  function buildTutorialFilename(title) {
     const today = new Date().toISOString().slice(0, 10);
-    const filename = 'proposed-links-' + today + '-' + (payload[0].id || 'links') + '.json';
+    return 'tutorial-' + today + '-' + slugify(title || 'tutorial') + '.md';
+  }
 
-    // Landing this at the repo root (rather than inside data/) sidesteps a
-    // long-documented GitHub quirk where the ?filename= query param can
-    // silently drop the deepest folder in a nested "create new file" URL.
-    // The repo owner moves the content into data/links-database.json and
-    // deletes this file as part of reviewing the PR — see the README.
+  function onCreateTutorialFile() {
+    const title = document.getElementById('tut-title').value.trim();
+    const content = document.getElementById('tut-content').value;
+
+    if (!title) { showToast('Give the tutorial a title first.'); return; }
+    if (!content.trim()) { showToast('Write the tutorial content first.'); return; }
+
+    const filename = buildTutorialFilename(title);
+    const md = /\n$/.test(content) ? content : content + '\n';
+
     const url = 'https://github.com/' + REPO_OWNER + '/' + REPO_NAME + '/new/' + REPO_BRANCH
       + '?filename=' + encodeURIComponent(filename)
-      + '&value=' + encodeURIComponent(content);
-
-    showPreview(filename, content);
+      + '&value=' + encodeURIComponent(md);
 
     if (url.length > 7000) {
-      showToast("That's a lot of content — GitHub's URL may be too long. Copy the preview below and create the file by hand instead.");
+      showToast("That's a lot of content — the GitHub link may be too long. Try a shorter tutorial, or create the file by hand.");
       return;
     }
 
     window.open(url, '_blank', 'noopener');
-    showToast('Opening GitHub in a new tab…');
+    showToast('Opening GitHub to create ' + filename + '…');
   }
 
-  function showPreview(filename, content) {
-    const box = document.getElementById('pr-preview');
-    const nameEl = document.getElementById('pr-preview-filename');
-    const pre = document.getElementById('pr-preview-pre');
-    nameEl.textContent = filename;
-    pre.textContent = content;
+  function onCreateTutorialEntry() {
+    const title = document.getElementById('tut-title').value.trim();
+    const tagsRaw = document.getElementById('tut-tags').value.trim();
+    const description = document.getElementById('tut-description').value.trim();
+
+    if (!title) { showToast('Give the tutorial a title first.'); return; }
+
+    const filename = buildTutorialFilename(title);
+    const entry = {
+      id: slugify(title),
+      title: title,
+      path: filename,
+      tags: tagsRaw ? tagsRaw.split(',').map((t) => t.trim()).filter(Boolean) : [],
+      description: description
+    };
+    const json = JSON.stringify(entry, null, 2);
+    const snippet = json.split('\n').map((line) => '  ' + line).join('\n') + ',';
+
+    showTutorialPreview(snippet);
+
+    const editUrl = 'https://github.com/' + REPO_OWNER + '/' + REPO_NAME + '/edit/' + REPO_BRANCH + '/' + TUTORIALS_DB_PATH;
+    window.open(editUrl, '_blank', 'noopener');
+
+    copyToClipboard(snippet).then((copied) => {
+      showToast(copied
+        ? 'Copied — GitHub opened in a new tab. Paste right after the opening [ in data/tutorials.json.'
+        : "GitHub opened in a new tab. Couldn't auto-copy — copy the snippet below by hand.");
+    });
+  }
+
+  function showTutorialPreview(snippet) {
+    const box = document.getElementById('tutorial-preview');
+    const pre = document.getElementById('tutorial-preview-pre');
+    pre.textContent = snippet;
     box.classList.add('is-visible');
   }
 
@@ -205,6 +317,6 @@
     el.textContent = msg;
     el.classList.add('is-visible');
     clearTimeout(toastTimer);
-    toastTimer = setTimeout(() => el.classList.remove('is-visible'), 4200);
+    toastTimer = setTimeout(() => el.classList.remove('is-visible'), 4600);
   }
 })();
