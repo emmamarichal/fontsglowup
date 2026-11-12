@@ -5,7 +5,8 @@
     "label": "Latin accents poorly drawn",
     "action": "Improve the Latin accents",
     "description": "Height, weight, or position of accents (acute, grave, circumflex, umlaut, cedilla…) inconsistent with the rest of the typeface.",
-    "tags": ["latin", "accents", "diacritics"]
+    "tags": ["latin", "accents", "diacritics"],
+    "requires": {"ranges": ["00C0-00FF", "0100-017F"], "min": 5, "missing": "no accented Latin letters"}
   },
   {
     "id": "vietnamese-accents",
@@ -13,7 +14,9 @@
     "label": "Vietnamese accents poorly drawn",
     "action": "Fix the Vietnamese accent stacking",
     "description": "Tone mark + modified vowel stacking handled poorly (e.g. ẩ, ộ, ẫ, ẳ): collisions, system height, stacking order.",
-    "tags": ["vietnamese", "accents", "diacritics", "stacking"]
+    "tags": ["vietnamese", "accents", "diacritics", "stacking"],
+    "requires": {"ranges": ["1EA0-1EF9"], "min": 10, "missing": "no Vietnamese letters (ẠẢẤẦẨ…)"},
+    "scope": ["vietnamese", "stacking"]
   },
   {
     "id": "comb-accents",
@@ -21,7 +24,8 @@
     "label": "Combining accent (comb) issues",
     "action": "Set up the combining accents (anchors, mark positioning)",
     "description": "Dynamic positioning of combining diacritics (mark positioning, anchors, GDEF) over a variety of base letters.",
-    "tags": ["combining", "marks", "anchors", "gdef", "diacritics"]
+    "tags": ["combining", "marks", "anchors", "gdef", "diacritics"],
+    "requires": {"ranges": ["0300-036F"], "missing": "no combining accents (U+0300–U+036F)"}
   },
   {
     "id": "outlines",
@@ -37,7 +41,9 @@
     "label": "Poorly constructed Cyrillic letters",
     "action": "Rework the Cyrillic letters",
     "description": "Forms traced from Latin without adapting to Cyrillic drawing conventions (e.g. italic а, д, л, я).",
-    "tags": ["cyrillic"]
+    "tags": ["cyrillic"],
+    "requires": {"ranges": ["0400-052F"], "min": 20, "missing": "no Cyrillic letters"},
+    "scope": ["cyrillic"]
   },
   {
     "id": "germandbls",
@@ -45,7 +51,9 @@
     "label": "Eszett (ß / ẞ — germandbls) poorly drawn",
     "action": "Redraw the germandbls (ß / ẞ)",
     "description": "Incorrect construction of lowercase ß or capital ẞ, shape confusion with β or ss.",
-    "tags": ["german", "eszett", "germandbls"]
+    "tags": ["german", "eszett", "germandbls"],
+    "requires": {"chars": "ßẞ", "missing": "no ß or ẞ"},
+    "scope": ["german", "eszett", "germandbls"]
   },
   {
     "id": "greek",
@@ -53,7 +61,9 @@
     "label": "Poorly constructed Greek letters",
     "action": "Rework the Greek letters",
     "description": "Forms traced from Latin without respecting Greek conventions (tonal/polytonic forms included).",
-    "tags": ["greek"]
+    "tags": ["greek"],
+    "requires": {"ranges": ["0370-03FF", "1F00-1FFF"], "min": 20, "missing": "no Greek letters"},
+    "scope": ["greek", "polytonic"]
   },
   {
     "id": "arabic",
@@ -61,7 +71,17 @@
     "label": "Incorrect Arabic forms / joining",
     "action": "Fix the Arabic forms and joining",
     "description": "Joining issues between isolated/initial/medial/final forms, or poorly drawn diacritic dots.",
-    "tags": ["arabic", "joining"]
+    "tags": ["arabic", "joining"],
+    "requires": {"ranges": ["0600-06FF", "0750-077F", "08A0-08FF", "FB50-FDFF", "FE70-FEFF"], "min": 20, "missing": "no Arabic letters"},
+    "scope": ["arabic", "joining"]
+  },
+  {
+    "id": "glyphset",
+    "category": "Extended Latin",
+    "label": "Incomplete character set",
+    "action": "Complete the character set (GF Latin Core at least)",
+    "description": "Glyphs Google Fonts expects are missing: currency and math signs, soft hyphen, small caps announced but missing, characters needed by the languages the font claims.",
+    "tags": ["glyphset", "coverage"]
   },
   {
     "id": "spacing-kerning",
@@ -70,6 +90,14 @@
     "action": "Even out the spacing and kerning",
     "description": "Irregular spacing, missing or inconsistent kerning pairs, disrupted visual rhythm.",
     "tags": ["spacing", "kerning"]
+  },
+  {
+    "id": "vertical-metrics",
+    "category": "Technical",
+    "label": "Wrong vertical metrics",
+    "action": "Fix the vertical metrics (hhea, typo, win)",
+    "description": "Ascender, descender and line gap values that clip accents or give different line spacing across platforms and styles.",
+    "tags": ["metrics", "vertical-metrics"]
   },
   {
     "id": "hinting",
@@ -85,7 +113,9 @@
     "label": "Poorly configured variable axes",
     "action": "Fix the variable font setup (axes, STAT, instances)",
     "description": "STAT table, fvar, inconsistent named instances, interpolation that breaks between masters.",
-    "tags": ["variable-font", "stat", "fvar"]
+    "tags": ["variable-font", "stat", "fvar"],
+    "requires": {"variable": true, "missing": "not a variable font"},
+    "scope": ["variable-font", "stat", "fvar"]
   },
   {
     "id": "metadata",

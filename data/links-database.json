@@ -20,8 +20,7 @@
       "technical",
       "qa",
       "hinting",
-      "metadata",
-      "variable-font"
+      "metadata"
     ],
     "explanation": "The repository for the QA tool used to generate the report included in this guide: list of checks, available profiles, installation."
   },
@@ -32,7 +31,6 @@
     "tags": [
       "technical",
       "metadata",
-      "variable-font",
       "hinting"
     ],
     "explanation": "The complete technical reference for the OpenType format: tables, structure, requirements — useful for understanding where a technical FAIL comes from."
@@ -44,9 +42,22 @@
     "tags": [
       "technical",
       "metadata",
-      "qa"
+      "qa",
+      "glyphset",
+      "coverage"
     ],
     "explanation": "Google Fonts' baseline technical requirements for any font submission — glyph sets, naming, hinting expectations — a solid general pre-flight checklist."
+  },
+  {
+    "id": "gf-glyphsets",
+    "title": "Google Fonts glyphsets (GF Latin Core, Plus, Pro…)",
+    "url": "https://github.com/googlefonts/glyphsets",
+    "tags": [
+      "glyphset",
+      "coverage",
+      "latin"
+    ],
+    "explanation": "The character sets Google Fonts uses — the exact list of glyphs in GF Latin Core, Kernel, Plus, Pro, Greek and Cyrillic sets — with ready-made glyph lists to import into Glyphs, FontLab or a UFO."
   },
   {
     "id": "gf-guide-metadata",
@@ -64,9 +75,8 @@
     "url": "https://googlefonts.github.io/gf-guide/metrics.html",
     "tags": [
       "technical",
-      "hinting",
-      "rendering",
-      "metadata"
+      "metrics",
+      "vertical-metrics"
     ],
     "explanation": "Explains vertical metrics (ascender, descender, line gap, win/hhea/typo values) and why mismatches between them cause clipped or inconsistent line spacing across platforms."
   },
@@ -170,9 +180,7 @@
       "combining",
       "marks",
       "anchors",
-      "gdef",
-      "vietnamese",
-      "stacking"
+      "gdef"
     ],
     "explanation": "The single most complete reference here: design consistency across accents, legacy vs. combining marks, anchor naming conventions, Vietnamese tone stacking, soft-dotted substitution, and the dotted-circle glyph — illustrated with right/wrong comparisons."
   },
@@ -300,7 +308,8 @@
     "tags": [
       "greek",
       "accents",
-      "diacritics"
+      "diacritics",
+      "polytonic"
     ],
     "explanation": "Irene Vlachou's guide to polytonic Greek — the accent system used for historical and liturgical Greek text, well beyond what monotonic Greek requires."
   },

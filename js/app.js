@@ -25,7 +25,10 @@
     fontspectorChecks: [], // FATAL/FAIL/WARN results: { key, status, id, title, filename, message, included, comment }
     fontspectorCounts: null, // counts per severity, across the whole report
     fontspectorMeta: null,   // { source: 'engine'|'paste', version, profile, files }
-    screenshots: [],      // { id, dataUrl, filename, comment, problem (linked problem id or null) }
+    screenshots: [],      // { id, dataUrl, filename, comment, problem (linked problem id or null), marks: [{ x, y, r, color }] }
+    font: null,           // what the dropped fonts contain (js/fontinfo.js), or null before a drop
+    checkRules: [],       // data/check-rules.json: which Fontspector checks belong to which problem
+    detected: {},         // problem id -> [Fontspector check ids that failed or warned]
     linksComputedFor: null, // selection the links/tutorials of step 2 were computed for
     lastOutput: null        // last generated { markdown, link, payload, … }
   };
@@ -37,11 +40,13 @@
 
   async function init() {
     try {
-      const [problems, linksDb, tutorialsDb] = await Promise.all([
+      const [problems, linksDb, tutorialsDb, checkRules] = await Promise.all([
         fetchJSON('data/problems.json'),
         fetchJSON('data/links-database.json'),
-        fetchJSON('data/tutorials.json').catch(() => [])
+        fetchJSON('data/tutorials.json').catch(() => []),
+        fetchJSON('data/check-rules.json').catch(() => [])
       ]);
+      state.checkRules = checkRules;
       state.problems = problems;
       state.linksDb = linksDb;
       state.tutorialsDb = tutorialsDb;
@@ -87,15 +92,78 @@
      categories sit side by side, distinguished only by a pale category tint
      (see .cat-* classes in css/style.css) rather than by grouped sections. */
 
-  function renderProblems() {
-    const container = document.getElementById('problems-list');
-    container.innerHTML = '';
-    state.problems.forEach((problem) => container.appendChild(renderProblemCard(problem)));
+  // Does the problem apply to the dropped fonts? (Always, before a drop.)
+  function problemApplies(problem) {
+    return !state.font || FontInfo.meets(state.font, problem.requires);
   }
 
-  function renderProblemCard(problem) {
+  // Tags of the problems that don't apply to this font (Greek for a Latin-only
+  // font…): a link or tutorial carrying one of them is about something the
+  // font doesn't have, so it isn't proposed — unless that problem is ticked anyway.
+  function excludedTags() {
+    const ex = new Set();
+    if (!state.font) return ex;
+    state.problems.forEach((p) => {
+      if (p.scope && !problemApplies(p) && !state.selectedProblemIds.has(p.id)) p.scope.forEach((t) => ex.add(t));
+    });
+    return ex;
+  }
+
+  function isAllowed(item, ex) {
+    return !(item.tags || []).some((t) => ex.has(t));
+  }
+
+  function renderProblems() {
+    const container = document.getElementById('problems-list');
+    const other = document.getElementById('problems-other');
+    const otherList = document.getElementById('problems-other-list');
+    container.innerHTML = '';
+    otherList.innerHTML = '';
+    const skipped = [];
+    state.problems.forEach((problem) => {
+      if (problemApplies(problem)) container.appendChild(renderProblemCard(problem));
+      else { skipped.push(problem); otherList.appendChild(renderProblemCard(problem, true)); }
+    });
+    other.hidden = !skipped.length;
+    document.getElementById('problems-other-summary').textContent =
+      'Not in this font (' + skipped.length + '): ' + skipped.map((p) => p.category === 'Technical' ? p.label : p.category).join(', ');
+    renderDetectedBar();
+  }
+
+  function detectedProblems() {
+    return state.problems.filter((p) => (state.detected[p.id] || []).length);
+  }
+
+  function renderDetectedBar() {
+    const bar = document.getElementById('detected-bar');
+    const found = detectedProblems();
+    bar.innerHTML = '';
+    bar.hidden = !found.length;
+    if (!found.length) return;
+    const txt = document.createElement('p');
+    txt.className = 'detected-bar__text';
+    txt.textContent = 'Fontspector found problems in ' + found.length + (found.length === 1 ? ' area' : ' areas') + ': ' +
+      found.map((p) => p.label + ' (' + state.detected[p.id].length + ')').join(', ') + '.';
+    bar.appendChild(txt);
+    const todo = found.filter((p) => !state.selectedProblemIds.has(p.id));
+    if (todo.length) {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'btn btn--secondary';
+      btn.textContent = todo.length === found.length ? 'Tick them' : 'Tick the other ' + todo.length;
+      btn.addEventListener('click', () => {
+        todo.forEach((p) => state.selectedProblemIds.add(p.id));
+        renderProblems();
+        refreshScreenshotIssueSelects();
+        markStale();
+      });
+      bar.appendChild(btn);
+    }
+  }
+
+  function renderProblemCard(problem, notInFont) {
     const label = document.createElement('label');
-    label.className = 'problem-card cat-' + slugifyCategory(problem.category);
+    label.className = 'problem-card cat-' + slugifyCategory(problem.category) + (notInFont ? ' problem-card--absent' : '');
 
     const checkbox = document.createElement('input');
     checkbox.type = 'checkbox';
@@ -105,6 +173,7 @@
       if (checkbox.checked) state.selectedProblemIds.add(problem.id);
       else state.selectedProblemIds.delete(problem.id);
       refreshScreenshotIssueSelects();
+      renderDetectedBar();
     });
 
     const body = document.createElement('div');
@@ -119,6 +188,21 @@
     lbl.className = 'problem-card__label';
     lbl.textContent = problem.label;
     body.appendChild(lbl);
+
+    const found = state.detected[problem.id] || [];
+    if (found.length) {
+      const badge = document.createElement('span');
+      badge.className = 'problem-card__detected';
+      badge.textContent = 'Found by Fontspector: ' + found.length + (found.length === 1 ? ' check' : ' checks');
+      badge.title = found.join('\n');
+      body.appendChild(badge);
+    }
+    if (notInFont && problem.requires && problem.requires.missing) {
+      const why = document.createElement('span');
+      why.className = 'problem-card__absent';
+      why.textContent = 'Not in this font: ' + problem.requires.missing;
+      body.appendChild(why);
+    }
 
     if (problem.description) {
       const desc = document.createElement('p');
@@ -149,7 +233,8 @@
   function computeAutoLinks() {
     const selected = state.problems.filter((p) => state.selectedProblemIds.has(p.id));
     const matches = [];
-    state.linksDb.forEach((link) => {
+    const ex = excludedTags();
+    state.linksDb.filter((l) => isAllowed(l, ex)).forEach((link) => {
       const matchedProblemIds = selected
         .filter((p) => (link.tags || []).some((t) => (p.tags || []).includes(t)))
         .map((p) => p.id);
@@ -163,7 +248,8 @@
   function computeAutoTutorials() {
     const selected = state.problems.filter((p) => state.selectedProblemIds.has(p.id));
     const matches = [];
-    state.tutorialsDb.forEach((tut) => {
+    const ex = excludedTags();
+    state.tutorialsDb.filter((t) => isAllowed(t, ex)).forEach((tut) => {
       const matchedProblemIds = selected
         .filter((p) => (tut.tags || []).some((t) => (p.tags || []).includes(t)))
         .map((p) => p.id);
@@ -231,7 +317,7 @@
       emptyHint.style.display = 'block';
       emptyHint.textContent = (state.autoLinks.length === 0 && state.autoTutorials.length === 0 && state.selectedProblemIds.size)
         ? "Nothing in the database matches this selection yet — add a link manually below, or fill out data/links-database.json / data/tutorials.json."
-        : 'Check at least one problem in step 1, then click "Show links".';
+        : 'Check at least one problem in step 2, then click "Show links".';
     }
   }
 
@@ -443,7 +529,7 @@
     box.classList.add('is-visible');
   }
 
-  /* ---------------------------- Step 3: fontspector report ------------------------ */
+  /* --------------------- Step 1 + 4: the fonts, and their Fontspector report -------------- */
   /* Main path: the user drops font files, and Fontspector itself (compiled to
      WebAssembly, vendored in vendor/fontspector/) runs the Google Fonts
      profile on them in a Web Worker — see js/fontspector-worker.js.
@@ -529,13 +615,25 @@
 
     const names = fonts.map((f) => f.name);
     const files = {};
+    let bytes;
     try {
-      const bytes = await Promise.all(fonts.map(readFileAsBytes));
+      bytes = await Promise.all(fonts.map(readFileAsBytes));
       fonts.forEach((f, i) => { files[f.name] = bytes[i]; });
     } catch (err) {
       setFontspectorStatus("Couldn't read the font file(s): " + err.message, 'error');
       return;
     }
+
+    // What the fonts contain: the problems and links that don't apply are set aside.
+    const infos = [];
+    bytes.forEach((b, i) => {
+      try { infos.push(FontInfo.read(b)); } catch (err) { showToast(names[i] + ': ' + err.message); }
+    });
+    state.font = infos.length ? FontInfo.merge(infos) : null;
+    state.detected = {};
+    renderFontSummary(names);
+    renderProblems();
+    if (state.linksComputedFor !== null) refreshLinks();
 
     let worker;
     try {
@@ -580,6 +678,67 @@
     worker.postMessage({ type: 'run', runId: run.id, profile: 'googlefonts', files: files });
   }
 
+  function renderFontSummary(names) {
+    const box = document.getElementById('font-summary');
+    box.innerHTML = '';
+    const f = state.font;
+    box.hidden = !f;
+    if (!f) return;
+    const cov = FontInfo.coverage(f);
+    const facts = [
+      describeFiles(names),
+      cov.chars + ' characters',
+      cov.scripts.length ? cov.scripts.map((sc) => sc.name + ' (' + sc.count + ')').join(', ') : 'no script with 10 characters or more',
+      f.variable ? 'variable: ' + f.axes.join(', ') : 'static'
+    ];
+    const title = document.createElement('p');
+    title.className = 'font-summary__title';
+    title.textContent = f.family || 'Fonts read';
+    box.appendChild(title);
+    const p = document.createElement('p');
+    p.className = 'font-summary__facts';
+    p.textContent = facts.join(' · ');
+    box.appendChild(p);
+    const absent = state.problems.filter((pr) => !problemApplies(pr));
+    if (absent.length) {
+      const n = document.createElement('p');
+      n.className = 'font-summary__note';
+      n.textContent = 'Set aside because the font doesn\'t have them: ' + absent.map((pr) => pr.label.toLowerCase()).join(', ') + ' — and their links.';
+      box.appendChild(n);
+    }
+  }
+
+  // data/check-rules.json: "checks" are check ids, with * standing for anything.
+  function ruleFor(checkId) {
+    return Compact.ruleFor(state.checkRules, checkId);
+  }
+
+  // The problem a check belongs to, and the resources to fix it.
+  function fixFor(checkId) {
+    const rule = ruleFor(checkId);
+    if (!rule) return { problem: null, links: [] };
+    const links = (rule.links || []).map((id) => state.linksDb.find((l) => l.id === id)).filter(Boolean)
+      .map((l) => ({ id: l.id, title: l.title, url: l.url }));
+    return { problem: rule.problem || null, links: links };
+  }
+
+  // problem id -> the failing or warning checks that belong to it
+  function computeDetected() {
+    const out = {};
+    state.fontspectorChecks.forEach((c) => {
+      if (!c.problem) return;
+      out[c.problem] = out[c.problem] || [];
+      if (!out[c.problem].includes(c.id)) out[c.problem].push(c.id);
+    });
+    state.detected = out;
+    renderProblems();
+  }
+
+  function withFix(c) {
+    const fix = fixFor(c.id);
+    return Object.assign(c, { problem: fix.problem, fixLinks: fix.links });
+  }
+
   function onFontspectorEngineResults(msg, names) {
     const parsed = Fontspector.fromCheckResults(msg.results);
     const relevant = parsed.checks.filter((c) => CHECKABLE_STATUSES.includes(c.status));
@@ -592,8 +751,9 @@
       message: c.message,
       included: false,
       comment: ''
-    }));
+    })).map(withFix);
     state.fontspectorCounts = parsed.counts;
+    computeDetected();
     state.fontspectorMeta = {
       source: 'engine',
       version: msg.version,
@@ -610,7 +770,7 @@
 
     setFontspectorStatus(
       'Checked ' + describeFiles(names) + ' — Fontspector ' + msg.version + ', Google Fonts profile.' +
-      (relevant.length ? ' Tick what matters below.' : ' No FAIL, WARN or FATAL: nothing to prioritize.'),
+      (relevant.length ? ' ' + relevant.length + ' fails and warnings, in step 4' + (detectedProblems().length ? '; the problems they point to are marked in step 2.' : '.') : ' No FAIL, WARN or FATAL: nothing to prioritize.'),
       'done'
     );
     renderFontspectorChecks();
@@ -642,9 +802,10 @@
       message: c.message,
       included: false,
       comment: ''
-    }));
+    })).map(withFix);
     state.fontspectorCounts = parsed.counts;
     state.fontspectorMeta = { source: 'paste' };
+    computeDetected();
 
     if (parsed.looksLikeSummaryOnly) {
       showToast("That looks like just the summary counts table — scroll to the individual check results below it in your report (each with its own ID and message) and paste those instead.");
@@ -663,6 +824,7 @@
     const summaryCounts = document.getElementById('fontspector-summary-counts');
     const list = document.getElementById('fontspector-checks');
     list.innerHTML = '';
+    document.getElementById('fontspector-empty-hint').hidden = !!state.fontspectorCounts;
 
     if (!state.fontspectorCounts) {
       summaryBox.classList.remove('is-visible');
@@ -766,6 +928,32 @@
       }
     }
 
+    if (check.problem || (check.fixLinks || []).length) {
+      const fix = document.createElement('p');
+      fix.className = 'check-row__fix';
+      const prob = state.problems.find((p) => p.id === check.problem);
+      if (prob) {
+        const tag = document.createElement('span');
+        tag.className = 'check-row__problem cat-' + slugifyCategory(prob.category);
+        tag.textContent = prob.label;
+        fix.appendChild(tag);
+      }
+      if ((check.fixLinks || []).length) {
+        fix.appendChild(document.createTextNode('How to fix: '));
+        check.fixLinks.forEach((l, i) => {
+          if (i) fix.appendChild(document.createTextNode(' · '));
+          const a = document.createElement('a');
+          a.href = l.url;
+          a.target = '_blank';
+          a.rel = 'noopener';
+          a.textContent = l.title;
+          a.addEventListener('click', (e) => e.stopPropagation());
+          fix.appendChild(a);
+        });
+      }
+      body.appendChild(fix);
+    }
+
     // Hidden by default — the button below reveals it. Clicks inside this
     // whole block stop propagation so typing a comment (or just opening the
     // field) never accidentally toggles the row's own include checkbox,
@@ -804,7 +992,7 @@
     return row;
   }
 
-  /* ------------------------------- Step 4: screenshots ---------------------------- */
+  /* ------------------------------- Step 5: screenshots ---------------------------- */
 
   // Files are read in parallel but added in the order they were picked.
   async function onScreenshotFiles(fileList) {
@@ -827,7 +1015,8 @@
         dataUrl: urls[i],
         filename: file.name,
         comment: '',
-        problem: null
+        problem: null,
+        marks: []
       });
     });
     if (files.length) renderScreenshots();
@@ -849,7 +1038,7 @@
     select.innerHTML = '';
     const none = document.createElement('option');
     none.value = '';
-    none.textContent = state.selectedProblemIds.size ? '— Not linked to an issue' : '— Check problems in step 1 first';
+    none.textContent = state.selectedProblemIds.size ? '— Not linked to an issue' : '— Check problems in step 2 first';
     select.appendChild(none);
     state.problems.filter((p) => state.selectedProblemIds.has(p.id)).forEach((p) => {
       const opt = document.createElement('option');
@@ -872,11 +1061,19 @@
     const card = document.createElement('div');
     card.className = 'screenshot-card';
 
+    const media = document.createElement('div');
+    media.className = 'screenshot-card__media';
     const img = document.createElement('img');
     img.src = shot.dataUrl;
     img.alt = shot.filename;
     img.className = 'screenshot-card__img';
-    card.appendChild(img);
+    media.appendChild(img);
+    const layer = markerLayer(shot);
+    media.appendChild(layer);
+    img.addEventListener('load', () => sizeLayer(layer, img));
+    media.addEventListener('click', () => openMarkerEditor(shot));
+    media.title = 'Mark the problem on this image';
+    card.appendChild(media);
 
     const body = document.createElement('div');
     body.className = 'screenshot-card__body';
@@ -911,6 +1108,15 @@
     bubble.appendChild(textarea);
     body.appendChild(bubble);
 
+    const actions = document.createElement('div');
+    actions.className = 'screenshot-card__actions';
+    const markBtn = document.createElement('button');
+    markBtn.type = 'button';
+    markBtn.className = 'btn btn--secondary';
+    markBtn.textContent = shot.marks.length ? 'Mark the problem (' + shot.marks.length + ')' : 'Mark the problem';
+    markBtn.addEventListener('click', () => openMarkerEditor(shot));
+    actions.appendChild(markBtn);
+
     const removeBtn = document.createElement('button');
     removeBtn.type = 'button';
     removeBtn.className = 'btn btn--danger-ghost';
@@ -919,44 +1125,203 @@
       state.screenshots = state.screenshots.filter((s) => s.id !== shot.id);
       renderScreenshots();
     });
-    body.appendChild(removeBtn);
+    actions.appendChild(removeBtn);
+    body.appendChild(actions);
 
     card.appendChild(body);
     return card;
   }
 
-  /* --------------------------------- Step 5: generate ----------------------------- */
-  /* Builds the "report" object (format described at the top of
-     js/github-comment.js), stores it in a link (js/urlhosted.js) and writes
-     the Markdown checklist around that link. GitHub refuses comments over
-     65,536 characters, link included, so screenshots are re-encoded smaller
-     and smaller until the whole comment fits (see fitToComment). */
+  /* ---------------------------- Screenshot markers (dots) ------------------------- */
+  /* Translucent coloured dots put on a screenshot to show where the problem
+     is. Kept as { x, y, r, color } with x, y, r as fractions of the image
+     (r of its shorter side), drawn over the image here and burnt into the
+     image when the report is generated. */
 
-  // Tried in order until the comment fits. maxSide = longest image side, in px.
-  const IMAGE_LEVELS = [
-    { maxSide: 1600, quality: 0.82 },
-    { maxSide: 1400, quality: 0.78 },
-    { maxSide: 1200, quality: 0.74 },
-    { maxSide: 1024, quality: 0.7 },
-    { maxSide: 900, quality: 0.64 },
-    { maxSide: 800, quality: 0.58 },
-    { maxSide: 700, quality: 0.52 },
-    { maxSide: 600, quality: 0.48 },
-    { maxSide: 520, quality: 0.44 },
-    { maxSide: 440, quality: 0.4 }
+  const MARK_COLORS = [
+    { name: 'Red', value: '#EA4335' },
+    { name: 'Yellow', value: '#FBBC04' },
+    { name: 'Green', value: '#34A853' },
+    { name: 'Blue', value: '#4285F4' },
+    { name: 'Purple', value: '#A142F4' }
   ];
+  const SVGNS = 'http://www.w3.org/2000/svg';
+  const markerUi = { shot: null, color: MARK_COLORS[0].value, size: 6, history: [] };
 
-  const imageCache = new Map(); // `${shot.id}:${level}` -> data URL
-  let webpSupport = null;
-
-  function canEncodeWebp() {
-    if (webpSupport === null) {
-      const c = document.createElement('canvas');
-      c.width = c.height = 1;
-      webpSupport = c.toDataURL('image/webp').indexOf('data:image/webp') === 0;
-    }
-    return webpSupport;
+  function markerLayer(shot) {
+    const svg = document.createElementNS(SVGNS, 'svg');
+    svg.setAttribute('class', 'marker-layer');
+    svg.setAttribute('aria-hidden', 'true');
+    svg.dataset.shotId = shot.id;
+    drawMarks(svg, shot, 1, 1);
+    return svg;
   }
+
+  // The thumbnail is letterboxed (object-fit: contain): place the dots over the image itself.
+  function sizeLayer(svg, img) {
+    const box = img.getBoundingClientRect();
+    const w = img.naturalWidth, h = img.naturalHeight;
+    if (!w || !h || !box.width) return;
+    const k = Math.min(box.width / w, box.height / h);
+    const dw = w * k, dh = h * k;
+    Object.assign(svg.style, { left: ((box.width - dw) / 2) + 'px', top: ((box.height - dh) / 2) + 'px', width: dw + 'px', height: dh + 'px' });
+    const shot = state.screenshots.find((s) => s.id === svg.dataset.shotId);
+    if (shot) drawMarks(svg, shot, w, h);
+  }
+
+  function drawMarks(svg, shot, w, h) {
+    svg.setAttribute('viewBox', '0 0 ' + w + ' ' + h);
+    while (svg.firstChild) svg.removeChild(svg.firstChild);
+    const side = Math.min(w, h);
+    shot.marks.forEach((m, i) => {
+      const c = document.createElementNS(SVGNS, 'circle');
+      c.setAttribute('cx', m.x * w);
+      c.setAttribute('cy', m.y * h);
+      c.setAttribute('r', m.r * side);
+      c.setAttribute('fill', m.color);
+      c.setAttribute('fill-opacity', '0.35');
+      c.setAttribute('stroke', m.color);
+      c.setAttribute('stroke-width', Math.max(1.5, m.r * side * 0.12));
+      c.dataset.index = i;
+      svg.appendChild(c);
+    });
+  }
+
+  function refreshMarkerEditor() {
+    const img = document.getElementById('marker-img');
+    const svg = document.getElementById('marker-svg');
+    drawMarks(svg, markerUi.shot, img.naturalWidth || 1, img.naturalHeight || 1);
+  }
+
+  function openMarkerEditor(shot) {
+    markerUi.shot = shot;
+    markerUi.history = [];
+    const editor = document.getElementById('marker-editor');
+    const img = document.getElementById('marker-img');
+    img.onload = refreshMarkerEditor;
+    img.src = shot.dataUrl;
+    img.alt = shot.filename;
+    document.getElementById('marker-editor-title').textContent = 'Mark the problem — ' + shot.filename;
+    editor.hidden = false;
+    document.body.classList.add('has-modal');
+    if (img.complete) refreshMarkerEditor();
+    document.getElementById('marker-done').focus();
+  }
+
+  function closeMarkerEditor() {
+    document.getElementById('marker-editor').hidden = true;
+    document.body.classList.remove('has-modal');
+    markerUi.shot = null;
+    renderScreenshots();
+  }
+
+  function setupMarkerEditor() {
+    const colors = document.getElementById('marker-colors');
+    MARK_COLORS.forEach((c, i) => {
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'marker-swatch';
+      b.style.setProperty('--swatch', c.value);
+      b.setAttribute('role', 'radio');
+      b.setAttribute('aria-label', c.name);
+      b.setAttribute('aria-checked', String(i === 0));
+      b.addEventListener('click', () => {
+        markerUi.color = c.value;
+        colors.querySelectorAll('.marker-swatch').forEach((x) => x.setAttribute('aria-checked', String(x === b)));
+      });
+      colors.appendChild(b);
+    });
+    const size = document.getElementById('marker-size');
+    size.addEventListener('input', () => { markerUi.size = +size.value; });
+
+    const svg = document.getElementById('marker-svg');
+    const img = document.getElementById('marker-img');
+    const point = (e) => {
+      const box = svg.getBoundingClientRect();
+      return { x: Math.min(1, Math.max(0, (e.clientX - box.left) / box.width)), y: Math.min(1, Math.max(0, (e.clientY - box.top) / box.height)) };
+    };
+    const save = () => markerUi.history.push(JSON.stringify(markerUi.shot.marks));
+    let drag = null;
+    svg.addEventListener('pointerdown', (e) => {
+      if (!markerUi.shot || e.button !== 0) return;
+      e.preventDefault();
+      const target = e.target.closest('circle');
+      save();
+      if (target) {
+        const m = markerUi.shot.marks[+target.dataset.index];
+        const p = point(e);
+        drag = { m: m, dx: m.x - p.x, dy: m.y - p.y, moved: false };
+      } else {
+        const p = point(e);
+        const w = img.naturalWidth || 1, h = img.naturalHeight || 1;
+        const r = markerUi.size / 100;
+        markerUi.shot.marks.push({ x: p.x, y: p.y, r: r, color: markerUi.color });
+        drag = { m: markerUi.shot.marks[markerUi.shot.marks.length - 1], dx: 0, dy: 0, moved: true, added: true, w: w, h: h };
+      }
+      svg.setPointerCapture(e.pointerId);
+      refreshMarkerEditor();
+    });
+    svg.addEventListener('pointermove', (e) => {
+      if (!drag) return;
+      const p = point(e);
+      drag.m.x = Math.min(1, Math.max(0, p.x + drag.dx));
+      drag.m.y = Math.min(1, Math.max(0, p.y + drag.dy));
+      drag.moved = true;
+      refreshMarkerEditor();
+    });
+    const end = () => {
+      if (drag && !drag.moved && !drag.added) markerUi.history.pop(); // a plain click on a dot changes nothing
+      drag = null;
+      markStale();
+    };
+    svg.addEventListener('pointerup', end);
+    svg.addEventListener('pointercancel', end);
+    const removeAt = (e) => {
+      const target = e.target.closest('circle');
+      if (!target || !markerUi.shot) return;
+      e.preventDefault();
+      save();
+      markerUi.shot.marks.splice(+target.dataset.index, 1);
+      refreshMarkerEditor();
+      markStale();
+    };
+    svg.addEventListener('dblclick', removeAt);
+    svg.addEventListener('contextmenu', removeAt);
+
+    document.getElementById('marker-undo').addEventListener('click', () => {
+      if (!markerUi.shot || !markerUi.history.length) return;
+      markerUi.shot.marks = JSON.parse(markerUi.history.pop());
+      refreshMarkerEditor();
+      markStale();
+    });
+    document.getElementById('marker-clear').addEventListener('click', () => {
+      if (!markerUi.shot || !markerUi.shot.marks.length) return;
+      save();
+      markerUi.shot.marks = [];
+      refreshMarkerEditor();
+      markStale();
+    });
+    document.getElementById('marker-done').addEventListener('click', closeMarkerEditor);
+    document.getElementById('marker-editor').addEventListener('click', (e) => { if (e.target.id === 'marker-editor') closeMarkerEditor(); });
+    document.addEventListener('keydown', (e) => {
+      if (!markerUi.shot) return;
+      if (e.key === 'Escape') closeMarkerEditor();
+      if ((e.key === 'z' || e.key === 'Z') && (e.metaKey || e.ctrlKey)) { e.preventDefault(); document.getElementById('marker-undo').click(); }
+    });
+    window.addEventListener('resize', () => {
+      document.querySelectorAll('.screenshot-card__media').forEach((m) => sizeLayer(m.querySelector('svg'), m.querySelector('img')));
+    });
+  }
+
+  /* --------------------------------- Step 6: generate ----------------------------- */
+  /* Builds the "report" object (format described at the top of
+     js/github-comment.js) and the Markdown checklist around the report link.
+     GitHub only makes a link clickable up to about 4,096 characters, so the
+     link holds references, not the report itself (js/compact.js), and the
+     screenshots go into the GitHub comment, where GitHub hosts them: the
+     tool hands them over as image files, with their dots drawn in. */
+
+  const EXPORT_MAX_SIDE = 2000;
 
   function loadImage(src) {
     return new Promise((resolve, reject) => {
@@ -967,33 +1332,36 @@
     });
   }
 
-  async function compressShot(shot, levelIndex) {
-    const key = shot.id + ':' + levelIndex;
-    if (imageCache.has(key)) return imageCache.get(key);
-    const level = IMAGE_LEVELS[levelIndex];
-    let out;
-    try {
-      const img = await loadImage(shot.dataUrl);
-      const w = img.naturalWidth;
-      const hgt = img.naturalHeight;
-      const scale = Math.min(1, level.maxSide / Math.max(w, hgt));
-      const canvas = document.createElement('canvas');
-      canvas.width = Math.max(1, Math.round(w * scale));
-      canvas.height = Math.max(1, Math.round(hgt * scale));
-      const ctx = canvas.getContext('2d');
-      ctx.fillStyle = '#FFFFFF'; // screenshots don't need transparency, and JPEG has none
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
-      ctx.imageSmoothingQuality = 'high';
-      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-      out = canvas.toDataURL(canEncodeWebp() ? 'image/webp' : 'image/jpeg', level.quality);
-      // a small original (an icon, a tight crop) may already be lighter
-      if (scale === 1 && /^data:image\/(png|jpeg|webp|gif);base64,/.test(shot.dataUrl) && shot.dataUrl.length <= out.length) out = shot.dataUrl;
-    } catch (err) {
-      console.error('Screenshot ' + shot.filename + ':', err);
-      out = '';
-    }
-    imageCache.set(key, out);
-    return out;
+  function shotFileName(index) {
+    return 'screenshot-' + (index + 1) + '.png';
+  }
+
+  // The screenshot as a PNG, at most EXPORT_MAX_SIDE px, with its dots.
+  async function exportShot(shot) {
+    const img = await loadImage(shot.dataUrl);
+    const w = img.naturalWidth;
+    const hgt = img.naturalHeight;
+    const scale = Math.min(1, EXPORT_MAX_SIDE / Math.max(w, hgt));
+    const canvas = document.createElement('canvas');
+    canvas.width = Math.max(1, Math.round(w * scale));
+    canvas.height = Math.max(1, Math.round(hgt * scale));
+    const ctx = canvas.getContext('2d');
+    ctx.imageSmoothingQuality = 'high';
+    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+    const side = Math.min(canvas.width, canvas.height);
+    (shot.marks || []).forEach((m) => {
+      const r = m.r * side;
+      ctx.beginPath();
+      ctx.arc(m.x * canvas.width, m.y * canvas.height, r, 0, Math.PI * 2);
+      ctx.globalAlpha = 0.35;
+      ctx.fillStyle = m.color;
+      ctx.fill();
+      ctx.globalAlpha = 1;
+      ctx.lineWidth = Math.max(1.5, r * 0.12);
+      ctx.strokeStyle = m.color;
+      ctx.stroke();
+    });
+    return new Promise((resolve) => canvas.toBlob(resolve, 'image/png'));
   }
 
   function fieldValue(id) {
@@ -1058,7 +1426,9 @@
         title: c.title || '',
         filename: c.filename || null,
         message: c.message || '',
-        comment: (c.comment || '').trim()
+        comment: (c.comment || '').trim(),
+        problem: c.problem || null,
+        links: (c.fixLinks || []).map((l) => ({ title: l.title, url: l.url }))
       }))
     } : null;
 
@@ -1082,44 +1452,23 @@
   async function fitToComment(report) {
     const publicBase = TypoConfig.publicBaseUrl();
     const reportPage = publicBase + 'report.html';
-    const budget = TypoConfig.COMMENT_BUDGET;
-    const shots = state.screenshots;
-
-    async function attempt(images) {
-      const r = Object.assign({}, report, { screenshots: images });
-      const payload = await UrlHosted.serialize(r);
-      const link = UrlHosted.makeLink(reportPage, payload);
-      const markdown = GitHubComment.build(r, { reportUrl: link, baseUrl: publicBase });
-      return { report: r, payload: payload, link: link, markdown: markdown, length: markdown.length, level: null, omitted: 0, fits: markdown.length <= budget };
-    }
     const linked = (shot) => (shot.problem && state.selectedProblemIds.has(shot.problem) ? shot.problem : null);
-    const base = (src, i, extra) => Object.assign({ name: shots[i].filename, comment: (shots[i].comment || '').trim(), problem: linked(shots[i]), src: src }, extra || {});
-
-    if (!shots.length) return attempt([]);
-
-    // Size of everything but the images, to skip levels that can't fit.
-    const bare = await attempt(shots.map((s, i) => base('', i)));
-    const last = IMAGE_LEVELS.length - 1;
-    for (let li = 0; li <= last; li++) {
-      const srcs = await Promise.all(shots.map((s) => compressShot(s, li)));
-      const estimate = bare.length + srcs.reduce((n, src) => n + src.length, 0);
-      if (estimate > budget * 1.03 && li < last) continue;
-      const res = await attempt(srcs.map((src, i) => base(src, i)));
-      if (res.fits) return Object.assign(res, { level: IMAGE_LEVELS[li], levelIndex: li });
+    const full = Object.assign({}, report, {
+      screenshots: state.screenshots.map((s, i) => ({ name: shotFileName(i), comment: (s.comment || '').trim(), problem: linked(s), src: '', omitted: true, inComment: true }))
+    });
+    // the most detailed version of the link that GitHub still makes clickable
+    let best = null;
+    for (let level = 0; level < Compact.LEVELS; level++) {
+      const payload = await UrlHosted.serialize(Compact.pack(full, level));
+      const link = UrlHosted.makeLink(reportPage, payload);
+      best = { payload: payload, link: link, level: level };
+      if (link.length <= TypoConfig.LINK_LIMIT) break;
     }
-
-    // Still too long at the lowest quality: leave the heaviest images out of
-    // the link — the comment then asks to attach those on GitHub directly.
-    const srcs = await Promise.all(shots.map((s) => compressShot(s, last)));
-    const order = srcs.map((src, i) => i).sort((a, b) => srcs[b].length - srcs[a].length);
-    const omitted = new Set();
-    let res = null;
-    for (const idx of order) {
-      omitted.add(idx);
-      res = await attempt(srcs.map((src, i) => (omitted.has(i) ? base('', i, { omitted: true }) : base(src, i))));
-      if (res.fits) break;
-    }
-    return Object.assign(res, { level: IMAGE_LEVELS[last], levelIndex: last, omitted: omitted.size });
+    const markdown = GitHubComment.build(full, { reportUrl: best.link, baseUrl: publicBase });
+    return {
+      report: full, payload: best.payload, link: best.link, markdown: markdown, length: markdown.length,
+      linkLevel: best.level, linkFits: best.link.length <= TypoConfig.LINK_LIMIT, fits: markdown.length <= TypoConfig.COMMENT_BUDGET
+    };
   }
 
   async function onGenerate() {
@@ -1138,7 +1487,7 @@
     const btn = document.getElementById('btn-generate');
     const originalLabel = btn.textContent;
     btn.disabled = true;
-    btn.textContent = state.screenshots.length ? 'Generating… (compressing screenshots)' : 'Generating…';
+    btn.textContent = 'Generating…';
 
     try {
       const report = await buildReport();
@@ -1172,14 +1521,16 @@
     updateMeter();
 
     const notes = [];
-    if (result.level && !result.omitted) {
-      notes.push({ kind: 'info', text: 'Screenshots are stored in the link at up to ' + result.level.maxSide + ' px, quality ' + Math.round(result.level.quality * 100) + ' %, so the comment fits on GitHub.' });
-    }
-    if (result.omitted) {
-      notes.push({ kind: 'warn', text: result.omitted + ' screenshot' + (result.omitted === 1 ? ' was' : 's were') + ' too heavy to fit in the link, even small: drag ' + (result.omitted === 1 ? 'it' : 'them') + ' into the GitHub comment yourself, after pasting (the comment marks which).' });
+    const linkLen = formatNumber(result.link.length) + ' characters';
+    if (!result.linkFits) {
+      notes.push({ kind: 'warn', text: 'The report link is ' + linkLen + ': GitHub only makes links clickable up to about 4,000. Untick some links or Fontspector checks (or shorten their comments) and generate again.' });
+    } else if (result.linkLevel > 0) {
+      notes.push({ kind: 'info', text: 'The report link is ' + linkLen + ', under GitHub’s limit of about 4,000 for a clickable link: to fit, the Fontspector messages are ' + (result.linkLevel === 1 ? 'shortened' : 'left out') + ' in the report (the checks, their titles and your comments are all there).' });
+    } else {
+      notes.push({ kind: 'info', text: 'The report link is ' + linkLen + ', under GitHub’s limit of about 4,000 for a clickable link.' });
     }
     if (!result.fits) {
-      notes.push({ kind: 'warn', text: 'This comment is longer than GitHub accepts. Untick a few Fontspector checks (their messages are long) and generate again.' });
+      notes.push({ kind: 'warn', text: 'This comment is longer than GitHub accepts. Shorten the comments and generate again.' });
     }
     if (TypoConfig.isLocal()) {
       notes.push({ kind: 'info', text: 'You are running the tool locally, so the links in the comment point to the published site (' + TypoConfig.PUBLIC_SITE_URL + '): push this version to GitHub first, so report.html exists there. “Open the full report” below uses your local copy.' });
@@ -1194,8 +1545,46 @@
     });
 
     document.getElementById('btn-open-report').href = UrlHosted.makeLink(TypoConfig.currentBaseUrl() + 'report.html', result.payload);
+    renderShotsExport();
 
     panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
+  // The screenshots, as files to drag into the GitHub comment.
+  const exportUrls = [];
+  async function renderShotsExport() {
+    const box = document.getElementById('shots-export');
+    const list = document.getElementById('shots-export-list');
+    exportUrls.splice(0).forEach((u) => URL.revokeObjectURL(u));
+    list.innerHTML = '';
+    box.hidden = !state.screenshots.length;
+    for (const [i, shot] of state.screenshots.entries()) {
+      let blob = null;
+      try { blob = await exportShot(shot); } catch (err) { console.error(err); }
+      if (!blob) continue;
+      const url = URL.createObjectURL(blob);
+      exportUrls.push(url);
+      const a = document.createElement('a');
+      a.className = 'shots-export__item';
+      a.href = url;
+      a.download = shotFileName(i);
+      const img = document.createElement('img');
+      img.src = url;
+      img.alt = shotFileName(i);
+      const cap = document.createElement('span');
+      cap.textContent = shotFileName(i);
+      a.appendChild(img);
+      a.appendChild(cap);
+      list.appendChild(a);
+    }
+  }
+
+  async function downloadAllShots() {
+    const items = Array.from(document.querySelectorAll('#shots-export-list a'));
+    for (const a of items) {
+      a.click();
+      await new Promise((r) => setTimeout(r, 350)); // browsers drop downloads fired all at once
+    }
   }
 
   // The comment as it will be copied: the generated Markdown, or the
@@ -1273,6 +1662,9 @@
       return;
     }
     if (!report || report.app !== 'typo-guide-generator') return;
+    if (report.v === 2) {
+      report = await Compact.unpack(report, { problems: state.problems, links: state.linksDb, tutorials: state.tutorialsDb, rules: state.checkRules }, false);
+    }
 
     const dropped = applyReport(report);
     showToast('Report loaded from the link — change anything, then generate again.' +
@@ -1343,7 +1735,9 @@
         filename: c.filename ? str(c.filename) : null,
         message: str(c.message),
         included: true,
-        comment: str(c.comment)
+        comment: str(c.comment),
+        problem: c.problem ? str(c.problem) : null,
+        fixLinks: arr(c.links).filter((l) => l && /^https?:\/\//.test(str(l.url))).map((l) => ({ title: str(l.title) || str(l.url), url: str(l.url) }))
       }));
       const counts = {};
       if (fs.counts && typeof fs.counts === 'object') {
@@ -1354,17 +1748,18 @@
       state.fontspectorCounts = counts;
       state.fontspectorMeta = { source: str(fs.source) || 'link', version: str(fs.version), profile: str(fs.profile), files: arr(fs.files).map(str) };
       renderFontspectorChecks();
+      computeDetected();
       setFontspectorStatus('Loaded from the link: the ' + checks.length + ' check' + (checks.length === 1 ? '' : 's') +
-        ' picked for this report. Drop the fonts again to re-run Fontspector.', 'done');
+        ' picked for this report. Drop the fonts again to re-run Fontspector and set aside what the font doesn\'t have.', 'done');
     }
 
     // Step 4: screenshots come back at the quality they had in the link.
     const shots = arr(r.screenshots);
     state.screenshots = shots
       .filter((s) => s && !s.omitted && /^data:image\/(png|jpeg|webp|gif);base64,/.test(str(s.src)))
-      .map((s) => ({ id: 'shot-' + (screenshotIdCounter++), dataUrl: str(s.src), filename: str(s.name) || 'screenshot', comment: str(s.comment), problem: s.problem ? str(s.problem) : null }));
+      .map((s) => ({ id: 'shot-' + (screenshotIdCounter++), dataUrl: str(s.src), filename: str(s.name) || 'screenshot', comment: str(s.comment), problem: s.problem ? str(s.problem) : null, marks: [] }));
     const missing = shots.length - state.screenshots.length;
-    if (missing) dropped.push(missing + ' screenshot' + (missing === 1 ? ' was' : 's were') + ' not stored in the link');
+    if (missing) dropped.push(missing + ' screenshot' + (missing === 1 ? ' is' : 's are') + ' in the GitHub comment, not in the link: drop ' + (missing === 1 ? 'it' : 'them') + ' again');
     renderScreenshots();
 
     return dropped.join(', ');
@@ -1382,6 +1777,7 @@
   }
 
   function bindStaticEvents() {
+    setupMarkerEditor();
     // Any edit in steps 1–5 after generating makes the comment out of date.
     ['input', 'change'].forEach((type) => document.addEventListener(type, (e) => {
       if (!e.target.closest || e.target.closest('#output-panel')) return;
@@ -1407,6 +1803,7 @@
       fontInput.value = '';
     });
     document.getElementById('btn-generate').addEventListener('click', onGenerate);
+    document.getElementById('btn-download-shots').addEventListener('click', downloadAllShots);
     document.getElementById('tab-preview').addEventListener('click', () => setOutputTab('preview'));
     document.getElementById('tab-markdown').addEventListener('click', () => setOutputTab('markdown'));
     document.getElementById('comment-markdown').addEventListener('input', () => {

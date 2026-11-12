@@ -145,6 +145,16 @@
     }
     if (!report || typeof report !== 'object' || Array.isArray(report)) return renderMessage('broken');
 
+    // A compact link (v2) only has references: the text comes from the site's data.
+    if (report && report.app === 'typo-guide-generator' && report.v === 2) {
+      try {
+        report = await Compact.unpack(report, await Compact.loadDb(''), true);
+      } catch (err) {
+        console.error(err);
+        return renderMessage('broken', err);
+      }
+    }
+
     if (report.app !== 'typo-guide-generator') {
       // Something made with another urlHosted app (title / author / content):
       // still readable, shown as a plain article.
@@ -365,6 +375,15 @@
       if (c.title) card.appendChild(text('h3', 'r-check__title', str(c.title)));
       if (c.message) card.appendChild(linkified('p', 'r-check__message', str(c.message)));
       if (c.comment && str(c.comment).trim()) card.appendChild(commentBubble(str(c.comment)));
+      const fixes = arr(c.links).filter((l) => l && Markdown.safeHref(str(l.url)));
+      if (fixes.length) {
+        const fix = h('p', 'r-check__fix', ['How to fix: ']);
+        fixes.forEach((l, i) => {
+          if (i) fix.appendChild(document.createTextNode(' · '));
+          fix.appendChild(externalLink(str(l.title) || str(l.url), str(l.url)));
+        });
+        card.appendChild(fix);
+      }
       list.appendChild(card);
     });
     sec.appendChild(list);
@@ -403,7 +422,9 @@
         img.addEventListener('click', () => fig.classList.toggle('is-zoomed'));
         fig.appendChild(h('div', 'r-shot__frame', [img]));
       } else {
-        fig.appendChild(text('div', 'r-shot__missing', 'This image was too heavy to fit in the report link — it is attached to the GitHub comment instead.'));
+        fig.appendChild(text('div', 'r-shot__missing', s.inComment
+          ? 'This image is in the GitHub comment that links to this report.'
+          : 'This image was too heavy to fit in the report link — it is attached to the GitHub comment instead.'));
       }
       const about = s.problem && labels[s.problem]
         ? h('span', 'r-shot__about', ['About: ', scrollLink(labels[s.problem], 'issue-' + Markdown.slug(s.problem))])

@@ -324,3 +324,9 @@ a.btn--primary, a.btn--primary:hover { color: white; }
   .r-shot__img { max-height: 180mm; box-shadow: none; }
   * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
 }
+
+.r-check__fix {
+  margin: 8px 0 0;
+  font-size: 0.875rem;
+  color: var(--ink-soft);
+}

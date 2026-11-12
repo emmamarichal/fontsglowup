@@ -15,6 +15,11 @@ const TypoConfig = (function () {
   const GITHUB_COMMENT_LIMIT = 65536;
   const COMMENT_BUDGET = 65000;
 
+  // GitHub doesn't make a link clickable past about 4,096 characters
+  // (github.com/orgs/community/discussions/48174), so the report link is
+  // kept under this — see js/compact.js.
+  const LINK_LIMIT = 4000;
+
   function isLocal(loc) {
     loc = loc || window.location;
     return loc.protocol === 'file:' || /^(localhost|127\.0\.0\.1|0\.0\.0\.0|\[::1\])$/.test(loc.hostname);
@@ -35,6 +40,7 @@ const TypoConfig = (function () {
     PUBLIC_SITE_URL: PUBLIC_SITE_URL,
     GITHUB_COMMENT_LIMIT: GITHUB_COMMENT_LIMIT,
     COMMENT_BUDGET: COMMENT_BUDGET,
+    LINK_LIMIT: LINK_LIMIT,
     isLocal: isLocal,
     publicBaseUrl: publicBaseUrl,
     currentBaseUrl: currentBaseUrl

@@ -26,7 +26,7 @@ When the tool runs locally, the links *inside the GitHub comment* still point to
 
 ```
 .
-├── index.html                    # the tool (5 steps)
+├── index.html                    # the tool (6 steps)
 ├── report.html                   # the full report, read from its own link (#?…) — also shows single tutorials
 ├── contribute.html               # public "suggest a link or tutorial" page (additive only)
 ├── css/
@@ -41,11 +41,14 @@ When the tool runs locally, the links *inside the GitHub comment* still point to
 │   ├── markdown.js               # small, safe Markdown → HTML renderer (tutorials, comments, preview)
 │   ├── fontspector.js            # turns Fontspector results (engine or pasted report) into checkable rows
 │   ├── fontspector-worker.js     # runs the Fontspector engine in the background
+│   ├── fontinfo.js               # reads the dropped fonts: characters, scripts, variable axes
+│   ├── compact.js                # the compact report link (references, under GitHub's ~4,000-character link limit)
 │   └── contribute.js             # contribute.html logic
 ├── vendor/
 │   └── fontspector/              # Fontspector compiled to WebAssembly (+ LICENSE, provenance README)
 ├── data/
-│   ├── problems.json             # the checkbox cards in step 1
+│   ├── problems.json             # the checkbox cards in step 2
+│   ├── check-rules.json          # which Fontspector checks point to which problem, and the links to fix them
 │   ├── links-database.json       # THE link database to fill in
 │   └── tutorials.json            # the tutorial database (points at files below)
 └── tutorials/
@@ -64,7 +67,7 @@ The full report page (`report.html`) uses the same design system: numbered glass
 
 ## The output: a GitHub comment + the full report
 
-Step 5 ("Generate the GitHub comment") produces two things, following feedback from the Google Fonts team (Markdown that fits GitHub issues, report state hosted in a URL):
+Step 6 ("Generate the GitHub comment") produces two things, following feedback from the Google Fonts team (Markdown that fits GitHub issues, report state hosted in a URL):
 
 ### 1. The GitHub comment — a short checklist
 
@@ -88,7 +91,7 @@ Thanks a lot for the submission!
 ```
 
 - **Title** = the Title field + the project name. `cc @handle` only if the Designer field is a GitHub handle (it notifies them); a plain name stays in the report. Your intro note, if any, comes next.
-- **One task per problem checked in step 1**, worded as an action: the `action` field of `data/problems.json` ("Improve the Latin accents"). A problem without one shows "Fix: *its label*". When screenshots are linked to that problem (step 4, "Linked issue"), the task adds "(see the screenshot(s) in the full report)".
+- **One task per problem checked in step 2**, worded as an action: the `action` field of `data/problems.json` ("Improve the Latin accents"). A problem without one shows "Fix: *its label*". When screenshots are linked to that problem (step 5, "Linked issue"), the task adds "(see the screenshot(s) in the full report)".
 - **One task for Fontspector** if checks are ticked: "Fix the Fontspector fails" / "Review the … warnings" / "fails and warnings", then **only the checks you commented on**, each with its comment. Ticked checks without a comment are only in the report ("2 more in the full report").
 - **One task for screenshots not linked to any problem**, if there are some: "Go through the (other) annotated screenshots in the full report".
 - **📄 Full report** — the link.
@@ -101,26 +104,37 @@ No links, tutorials, date or signature in the comment: they're all in the report
 
 - a summary: counts, your intro note, the same **To do** list as the comment (each item jumps to its details), a table of contents;
 - the issues with their links (title, address, explanation), tutorials and linked screenshots;
-- the ticked Fontspector checks with their **complete messages**, the run details ("Fontspector 1.6.0 · googlefonts profile · MyFont.ttf · in total 20 FAIL, 21 WARN — 3 picked here") and your comments in bubbles;
+- the ticked Fontspector checks with their messages (shortened, or left out, when the link would get too long for GitHub), their **How to fix** links, the run details ("Fontspector 1.6.0 · googlefonts profile · MyFont.ttf · in total 20 FAIL, 21 WARN — 3 picked here") and your comments in bubbles;
 - the tutorials, in full;
-- the screenshots with their comment bubbles and the issue they're about (click an image to see it bigger);
+- the screenshots' captions, comments and the issue they're about — the images themselves are in the GitHub comment (see below);
 - who reviewed it.
 
 At the top: **Copy the GitHub comment** (rebuilds the same comment from the report), **Print or save as PDF** (a print layout is included: white background, no buttons, cards kept whole across pages), and **Edit in the generator**, which opens `index.html#?…`: the generator then refills every step from the link — problems, kept/unticked links, manual links, picked checks and their comments, screenshots, all fields — ready to change and generate again. As in urlHosted, the old link is removed from the address bar as soon as you change something, since it no longer matches.
 
 **How the link works.** This is [urlHosted](https://github.com/graphicore/urlHosted)'s technique and format (Lasse Fister): the report is JSON, compressed with zlib (deflate), base64-encoded and placed after `#?`. Browsers never send the part after `#` to the server, so the report isn't stored anywhere: whoever has the link has the report, and it can't be edited or deleted after the fact (a new version is a new link). `js/urlhosted.js` produces exactly what urlHosted's `lib/sAndD.js` produces (checked: urlHosted's own pako code reads our links and vice versa), using the browser's built-in `CompressionStream` instead of a library. The data model is documented at the top of `js/github-comment.js`; it includes `title`, `author` and `date`, the field names urlHosted uses. `report.html` also opens links made with urlHosted itself (shown as a plain article).
 
-**The size limit.** GitHub refuses comments longer than **65,536 characters**, and the report link is part of the comment. Text is small (a typical report without screenshots is a few thousand characters), but screenshots aren't, so when you generate, the tool re-encodes them (WebP, or JPEG in browsers that can't write WebP) at the best quality that still fits: up to 1600 px and 82 % quality, then step by step down to 440 px / 40 %. A meter under the comment shows the total against GitHub's limit, and a note says which quality was used. Your original images stay untouched in the tool. If screenshots still don't fit at the smallest size (many large or very detailed images), the heaviest are left out of the link: the comment lists them ("📎 Too heavy for the link, attached here: …") and the tool tells you to drag them into the GitHub comment yourself — GitHub hosts images dropped into a comment.
+**The size limit.** GitHub only makes a link **clickable up to about 4,096 characters** (the limit is GitHub's own, and it applies to `<a href>` as well: [community discussion](https://github.com/orgs/community/discussions/48174)). A first version stored the whole report in the link, so a link with screenshots ran to tens of thousands of characters: it opened from the generator, but stayed plain text on GitHub. Since then the link is **compact** (format v2, `js/compact.js`): it holds references — the ids of the problems, links and tutorials, whose text `report.html` reads from `data/*.json` and `tutorials/*.md` on the site — plus the picked Fontspector checks with your comments, and the screenshots' captions. The tool keeps the link under 4,000 characters: when it would be longer, the Fontspector messages are shortened, then left out (the checks, their titles and your comments stay); if it still doesn't fit, a note asks you to untick some links or checks. A note under the comment gives the link's length. Because links and tutorials are read from the site when the report opens, a correction to the database shows up in reports already posted. Old full links (format v1) still open.
+
+**Screenshots go into the GitHub comment**, where GitHub hosts them. After generating, the tool shows each screenshot as a file (`screenshot-1.png`, … — up to 2000 px, PNG, with its dots drawn in) with a **Download all the screenshots** button. The comment has a **Screenshots** section with one line per image ("**1.** Latin accents poorly drawn — the comment") followed by `<!-- drag screenshot-1.png here -->`: on GitHub, click on that line and drag the file in, and GitHub uploads it and puts it in place. The comment must stay under GitHub's 65,536 characters, which text alone hardly reaches.
 
 **Safety.** Since anyone can write a link, `report.html` treats its content as untrusted: everything is built as text nodes (never `innerHTML`), Markdown goes through `js/markdown.js`, which shows raw HTML as text and only keeps `http(s)`/`mailto`/relative links and `data:image` / `http(s)` images, and a Content-Security-Policy only allows this site's own scripts.
 
 ### Reviewer name and contact
 
-Two optional fields in step 5 — who reviewed, and how to reach them (an e-mail address or a URL becomes a link). They sign the comment and close the full report.
+Two optional fields in step 6 — who reviewed, and how to reach them (an e-mail address or a URL becomes a link). They sign the comment and close the full report.
 
 ## How it fits together
 
-### `data/problems.json` — the cards in step 1
+### Step 1: the fonts first
+
+The tool starts with the fonts: drop the family (.ttf / .otf) and `js/fontinfo.js` reads what it contains — its characters (cmap), the scripts they cover, whether it's variable — while Fontspector checks it in the background (see [Fontspector report](#fontspector-report-step-4)). Dropping fonts is optional: without them, every problem and link is offered, as before.
+
+With the fonts, two things change in the next steps:
+
+- **Only what applies to the font is proposed.** A problem with a `requires` rule (below) that the font doesn't meet — Greek letters in a Latin-only font, Vietnamese stacking without Vietnamese letters, variable axes in a static font — moves to a folded *Not in this font* list (it can still be ticked from there). Its `scope` tags are then left out of the links and tutorials: a link tagged `greek` isn't proposed for a font without Greek, even under "Latin accents poorly drawn".
+- **What Fontspector finds points to the problems.** Each FAIL and WARN is matched to a problem with `data/check-rules.json` (below). In step 2 the matching cards get a "Found by Fontspector: n checks" badge, and a bar above the cards ticks them all in one click. In step 4 each check shows its problem and **How to fix** links; ticked checks carry them into the full report, and a commented check gets its first link in the GitHub comment.
+
+### `data/problems.json` — the cards in step 2
 
 Each entry is a problem you can check, with `tags`:
 
@@ -134,6 +148,15 @@ Each entry is a problem you can check, with `tags`:
   "tags": ["german", "eszett", "germandbls"]
 }
 ```
+
+Two optional fields tie a problem to what the font contains:
+
+```json
+"requires": {"ranges": ["0370-03FF", "1F00-1FFF"], "min": 20, "missing": "no Greek letters"},
+"scope": ["greek", "polytonic"]
+```
+
+`requires` says when the problem applies: at least `min` characters (default 1) in the Unicode `ranges` (hex), at least one of the characters in `chars` (`"chars": "ßẞ"`), or `"variable": true`. `missing` is shown on the card when the font doesn't meet it. `scope` lists the tags that only make sense with this script or feature: when the problem doesn't apply, links and tutorials carrying one of these tags are left out. Keep scope tags off general links (a general diacritics guide shouldn't be tagged `vietnamese`, or a Latin-only font would lose it).
 
 `action` is the task this problem becomes in the GitHub checklist — short, imperative, in English, as the designer will read it ("Redraw the germandbls (ß / ẞ)"). `category` sets the card's pale color tint (via a slugified `.cat-<category>` class — add a matching entry in `css/style.css` if you introduce a new category). `tags` is what links this problem to the links and tutorials databases below — feel free to invent your own tags, there's no closed list.
 
@@ -183,11 +206,23 @@ In the interface (step 2), a matching tutorial appears above the links for its p
 
 **Suggesting a tutorial** goes through `contribute.html`, same additive-only spirit as links — see below.
 
-### Fontspector report (step 3)
+### `data/check-rules.json` — from a Fontspector check to a problem and its fixes
 
-**Drop the font files on the step 3 drop zone** (one font, or a whole family at once to also run the family-level checks). The tool runs [Fontspector](https://github.com/fonttools/fontspector) on them with the **Google Fonts profile**, right in the browser — it's the same `fontspector-web` engine as the [official web tool](https://fonttools.github.io/fontspector/), compiled to WebAssembly and committed in `vendor/fontspector/`. Nothing is uploaded anywhere.
+```json
+{
+  "problem": "outlines",
+  "checks": ["outline_*", "overlapping_path_segments", "contour_count"],
+  "links": ["gf-guide-outlines", "glyphs-drawing-good-paths"]
+}
+```
 
-How it runs: `js/app.js` reads the dropped files and hands them to `js/fontspector-worker.js`, a Web Worker (so the page stays responsive), which loads the engine and calls its `check_fonts(files, "googlefonts", …)` function. The engine (~14.5 MB, ~4.5 MB compressed) is only downloaded on the first drop, then cached by the browser; on a fast connection the first check takes a few seconds, later ones about a second. Network-dependent checks are skipped, exactly as in the official web tool. `Fontspector.fromCheckResults()` (`js/fontspector.js`) turns the raw results into rows: the check's readable title, its ID, which file it's about (when several were dropped), and its message, cleaned from Markdown to plain text. If the "Project / font name" field in step 5 is still empty, it's filled with the family name read from the font.
+`checks` are Fontspector check IDs (as shown on each row, e.g. `opentype/GDEF_mark_chars`); `*` stands for anything (`googlefonts/name/*`). The first rule that matches wins. `links` are IDs from `links-database.json`, shown as **How to fix** on the check. A check no rule matches is still offered, without a problem or links. To cover a new check, add its ID to a rule.
+
+### Fontspector report (step 4)
+
+**Drop the font files on the step 1 drop zone** (one font, or a whole family at once to also run the family-level checks). The tool runs [Fontspector](https://github.com/fonttools/fontspector) on them with the **Google Fonts profile**, right in the browser — it's the same `fontspector-web` engine as the [official web tool](https://fonttools.github.io/fontspector/), compiled to WebAssembly and committed in `vendor/fontspector/`. Nothing is uploaded anywhere.
+
+How it runs: `js/app.js` reads the dropped files and hands them to `js/fontspector-worker.js`, a Web Worker (so the page stays responsive), which loads the engine and calls its `check_fonts(files, "googlefonts", …)` function. The engine (~14.5 MB, ~4.5 MB compressed) is only downloaded on the first drop, then cached by the browser; on a fast connection the first check takes a few seconds, later ones about a second. Network-dependent checks are skipped, exactly as in the official web tool. `Fontspector.fromCheckResults()` (`js/fontspector.js`) turns the raw results into rows: the check's readable title, its ID, which file it's about (when several were dropped), and its message, cleaned from Markdown to plain text. If the "Project / font name" field in step 6 is still empty, it's filled with the family name read from the font.
 
 Then **tick the results worth prioritizing for this designer** — **FATAL**, **FAIL** and **WARN** are offered, **unchecked by default**. INFO, SKIP and PASS (and ERROR, when a check itself couldn't run) are only counted in the summary line, not offered as action items. Long messages are clamped to a few lines with a "Show full message" toggle.
 
@@ -230,13 +265,15 @@ Both steps derive the filename from the tutorial's title, so as long as the titl
 
 If `REPO_OWNER` / `REPO_NAME` / `REPO_BRANCH` at the top of `js/contribute.js` ever need to change (repo renamed, transferred, or default branch changed), update them there.
 
-### Screenshots (step 4)
+### Screenshots (step 5)
 
-Drop one or more images in the tool itself (not through `contribute.html` — these are per-report, not part of the shared database). Each gets a **Linked issue** menu (the problems checked in step 1) and a comment field (a speech bubble, same as in the report). Linking a screenshot to a problem adds "(see the screenshot in the full report)" to that problem's task in the GitHub checklist, and links the two in the report. The image and its comment go into the full report, compressed to fit the link (see [The size limit](#2-the-full-report--stored-in-its-own-link)). Nothing is uploaded anywhere.
+Drop one or more images in the tool itself (not through `contribute.html` — these are per-report, not part of the shared database). Each gets a **Linked issue** menu (the problems checked in step 2) and a comment field (a speech bubble, same as in the report).
+
+**Mark the problem** (or a click on the image) opens it large, to put **translucent coloured dots** right on the problem: click to add a dot, drag it to move it, double-click or right-click it to remove it, with a choice of five colours, a size slider, Undo (⌘Z / Ctrl+Z) and Clear. The dots are drawn into the image files made for the GitHub comment. Linking a screenshot to a problem adds "(see the screenshot below)" to that problem's task in the GitHub checklist, and links the two in the report. The images go into the GitHub comment, which you drag them into (see [The size limit](#2-the-full-report--stored-in-its-own-link)); the full report has their captions and comments. Nothing is uploaded by the tool itself.
 
 ### The font name
 
-The "Project / font name" field in step 5 can be typed by hand. When fonts are dropped in step 3, it's filled with the family name Fontspector reads from them — only if the field is still empty, so a name you've typed is never overwritten. (An early version auto-filled it from a dropped font without checking anything, which was misleading; now the drop genuinely runs the checks, so the auto-fill comes along with a real analysis.)
+The "Project / font name" field in step 6 can be typed by hand. When fonts are dropped in step 1, it's filled with the family name Fontspector reads from them — only if the field is still empty, so a name you've typed is never overwritten. (An early version auto-filled it from a dropped font without checking anything, which was misleading; now the drop genuinely runs the checks, so the auto-fill comes along with a real analysis.)
 
 ## Deployment
 
@@ -248,15 +285,16 @@ Nothing special: GitHub Pages serves static files, and that's all this repo is.
 
 All internal links on the site are relative (`css/style.css`, `js/app.js`, `contribute.html`…), so it works equally well at the root of a `*.github.io` domain or under a subpath `*.github.io/repo-name/`. If the site moves (renamed repo, custom domain), update `PUBLIC_SITE_URL` in `js/config.js`; links already posted keep pointing to the old address, so keep the old one serving `report.html` if you can.
 
-Make sure `vendor/fontspector/` is committed along with everything else — without it, the drop zone in step 3 can't run (the page then falls back to the paste field). The `.wasm` file is 14.5 MB: fine for `git push`, and under the 25 MB limit if you upload files through GitHub's web interface instead.
+Make sure `vendor/fontspector/` is committed along with everything else — without it, the drop zone in step 1 can't run (the page then falls back to the paste field). The `.wasm` file is 14.5 MB: fine for `git push`, and under the 25 MB limit if you upload files through GitHub's web interface instead.
 
 ## Known limitations
 
-- **No draft autosave**: reloading the page clears the current selection, including any screenshots you'd added. Once generated, though, the report link *is* a save: open it, click "Edit in the generator", and everything comes back (screenshots at the quality stored in the link).
+- **No draft autosave**: reloading the page clears the current selection, including any screenshots you'd added. Once generated, though, the report link *is* a save: open it, click "Edit in the generator", and everything comes back except the screenshot images, which are in the GitHub comment.
 - **The link database has real content but is still partial** — 55 entries covering most categories, no Arabic resource yet, and most of Rosalie Wagner's 289-entry list (see above) hasn't been reviewed yet.
 - **The tutorial database has five example entries** — enough to prove the feature works end to end, not a real library yet.
-- **Screenshots in the link are compressed** to fit GitHub's 65,536-character limit: one or two screenshots stay sharp (1400–1600 px), many get smaller, and very heavy ones can be left out of the link (you're told which, to attach on GitHub directly). Generating with several large screenshots takes a few seconds.
-- **The report link is long** (up to ~60,000 characters with screenshots). GitHub, browsers and e-mail notifications handle it; some chat apps or URL shorteners may cut it. A cut link opens on a clear "This report link is incomplete" page.
+- **Screenshots are dragged into the GitHub comment by hand**, one per line: GitHub doesn't accept images inside links or as `data:` addresses, and only hosts files dropped into a comment.
+- **The report link must stay under ~4,000 characters** to be clickable on GitHub: a very long selection (dozens of checks with long comments, many manual links) may not fit, and the tool says so. A cut link opens on a clear "This report link is incomplete" page.
+- **Links and tutorials are read from the site when a report opens**: if one is removed from the database, old reports lose it.
 - **A report link can't be updated or deleted**: it contains the report. To correct one, edit it in the generator and post the new comment.
 - **Only the picked Fontspector checks travel in the link**, not the whole run: "Edit in the generator" restores those (with comments); drop the fonts again to see the full results.
 - **`contribute.html` requires a manual paste step** for both links and (for its second step) tutorials. GitHub's URL pre-fill trick only works for creating brand-new files, not for injecting content into an existing file's diff — so the page copies the snippet to the clipboard and opens the right file, but pasting is still a manual (if guided) step. See the explanation above for why.

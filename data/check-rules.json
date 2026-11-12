@@ -1,0 +1,52 @@
+[
+  {
+    "problem": "outlines",
+    "checks": ["outline_*", "overlapping_path_segments", "contour_count", "opentype/points_out_of_bounds", "nested_components", "transformed_components", "opentype/glyf_non_transformed_duplicate_components", "opentype/glyf_unused_data"],
+    "links": ["gf-guide-outlines", "glyphs-drawing-good-paths"]
+  },
+  {
+    "problem": "variable-font",
+    "checks": ["interpolation_issues", "STAT_*", "googlefonts/STAT/*", "opentype/STAT/*", "googlefonts/axisregistry/*", "fvar_*", "googlefonts/fvar_instances", "opentype/fvar/*", "opentype/varfont/*", "varfont/*", "googlefonts/varfont/*", "mandatory_avar_table", "opentype/weight_class_fvar", "googlefonts/metadata/axes", "googlefonts/parametric_axes_hidden"],
+    "links": ["gf-guide-variable", "gf-guide-axis-registry"]
+  },
+  {
+    "problem": "vertical-metrics",
+    "checks": ["googlefonts/vertical_metrics", "googlefonts/vertical_metrics_regressions", "family/vertical_metrics", "family/win_ascent_and_descent", "linegaps", "os2_metrics_match_hhea", "googlefonts/use_typo_metrics", "typoascender_exceeds_Agrave", "googlefonts/cjk_vertical_metrics", "googlefonts/cjk_vertical_metrics_regressions"],
+    "links": ["gf-guide-metrics"]
+  },
+  {
+    "problem": "comb-accents",
+    "checks": ["opentype/GDEF_*", "soft_dotted", "dotted_circle", "gpos7"],
+    "links": ["gf-guide-diacritics", "glyphs-mark-to-mark"]
+  },
+  {
+    "problem": "latin-accents",
+    "checks": ["alt_caron", "legacy_accents"],
+    "links": ["gf-guide-diacritics", "diacritics-typo-cz"]
+  },
+  {
+    "problem": "glyphset",
+    "checks": ["googlefonts/glyph_coverage", "googlefonts/glyphsets/shape_languages", "googlefonts/tofu", "googlefonts/metadata/can_render_samples", "googlefonts/family/equal_codepoint_coverage", "missing_small_caps_glyphs", "soft_hyphen", "rupee", "googlefonts/separator_glyphs", "mandatory_glyphs", "whitespace_glyphs", "case_mapping", "control_chars", "has_glyphs", "has_unicodes", "googlefonts/render_own_name"],
+    "links": ["gf-glyphsets", "gf-guide-requirements"]
+  },
+  {
+    "problem": "spacing-kerning",
+    "checks": ["gpos_kerning_info", "tabular_kerning", "suspicious_sidebearings", "base_has_width", "math_signs_width", "whitespace_widths", "whitespace_ink", "googlefonts/family/tnum_horizontal_metrics", "opentype/maxadvancewidth"],
+    "links": ["htletterspacer", "kern-on"]
+  },
+  {
+    "problem": "hinting",
+    "checks": ["hinting_impact", "googlefonts/gasp", "smart_dropout", "googlefonts/has_ttfautohint_params", "googlefonts/old_ttfautohint", "integer_ppem_if_hinted"],
+    "links": ["ttfautohint", "raster-tragedy"]
+  },
+  {
+    "problem": "arabic",
+    "checks": ["arabic_*"],
+    "links": []
+  },
+  {
+    "problem": "metadata",
+    "checks": ["googlefonts/name/*", "name/*", "opentype/name/*", "universal/required_name_ids", "googlefonts/font_names", "googlefonts/family_name_compliance", "opentype/family_naming_recommendations", "opentype/postscript_name", "googlefonts/vendor_id", "opentype/vendor_id", "googlefonts/font_copyright", "googlefonts/fstype", "opentype/fsselection*", "opentype/mac_style", "googlefonts/weightclass", "opentype/font_version", "googlefonts/version_bump", "googlefonts/canonical_filename", "googlefonts/metadata/*", "googlefonts/meta/*", "opentype/family/*", "family/uniqueness_first_31_characters", "googlefonts/no_oblique_bit", "opentype/italic_angle", "opentype/caret_slope", "opentype/slant_direction", "opentype/monospace", "opentype/code_pages", "googlefonts/repo/*", "googlefonts/family/has_license", "googlefonts/family/italics_have_roman_counterparts", "unique_glyphnames", "valid_glyphnames", "googlefonts/unitsperem", "opentype/unitsperem", "stylisticset_description"],
+    "links": ["gf-guide-metadata", "gf-guide-requirements"]
+  }
+]

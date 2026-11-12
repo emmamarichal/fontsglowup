@@ -14,21 +14,44 @@
   <header class="masthead">
     <p class="masthead__mark">Typo Guide Generator</p>
     <h1>Compose a custom correction guide</h1>
-    <p>Select the problems found on this project, check the related resources, run Fontspector, add screenshots — then post a checklist on the GitHub issue, with a link to the full report.</p>
+    <p>Drop the fonts, select the problems found on this project, check the related resources and the Fontspector results, add screenshots — then post a checklist on the GitHub issue, with a link to the full report.</p>
     <nav class="masthead__nav">
       <a href="contribute.html">Suggest a link or tutorial</a>
       <a href="https://github.com/emmamarichal/gf-issues-dashboard#readme">More Google Fonts tools</a>
     </nav>
   </header>
 
-  <!-- Step 1 — problems -->
-  <section class="section" id="section-1">
+  <!-- Step 1 — fonts -->
+  <section class="section" id="section-fonts">
     <div class="section__head">
       <span class="section__num">01</span>
+      <h2>Drop the fonts <span style="font-weight:400;color:var(--ink-faint);font-size:0.85rem;">(recommended)</span></h2>
+    </div>
+    <p class="section__intro">The tool reads what the font contains — its scripts, its accents, whether it's variable — and only proposes the problems and resources that apply to it (no Greek diacritics tutorial for a Latin-only font). The fonts are also checked with Fontspector and the Google Fonts profile: what it finds is pointed out in the next steps, with resources to fix it.</p>
+
+    <div class="dropzone" id="font-dropzone">
+      <p class="dropzone__label">Drop font files here, or click to choose</p>
+      <p class="dropzone__hint">.ttf or .otf — drop a whole family at once to also run the family-level checks. Nothing is uploaded: the fonts never leave your browser.</p>
+      <input type="file" id="font-file-input" accept=".ttf,.otf,font/ttf,font/otf" multiple>
+    </div>
+
+    <div class="font-summary" id="font-summary" hidden></div>
+    <p class="fontspector-status" id="fontspector-status" aria-live="polite"></p>
+  </section>
+
+  <!-- Step 2 — problems -->
+  <section class="section" id="section-1">
+    <div class="section__head">
+      <span class="section__num">02</span>
       <h2>Select the problems</h2>
     </div>
     <p class="section__intro">Check everything that applies to this project. The list in the next step is calculated from these choices — come back here and click "Show links" again if you change your mind.</p>
+    <div class="detected-bar" id="detected-bar" hidden></div>
     <div id="problems-list"><!-- rendered by js/app.js --></div>
+    <details class="problems-other" id="problems-other" hidden>
+      <summary id="problems-other-summary">Not in this font</summary>
+      <div id="problems-other-list" class="problems-other__list"></div>
+    </details>
     <div class="actions-row">
       <button class="btn btn--primary" id="btn-show-links" type="button">Show links</button>
     </div>
@@ -37,12 +60,12 @@
   <!-- Step 2 — links & tutorials -->
   <section class="section" id="section-2">
     <div class="section__head">
-      <span class="section__num">02</span>
+      <span class="section__num">03</span>
       <h2>Review the links &amp; tutorials</h2>
     </div>
     <p class="section__intro">Uncheck anything that isn't relevant to this project, add a missing link. Matching tutorials (if any) are shown first, and get embedded in full in the report — not just linked. This selection goes into the GitHub checklist and the full report, sorted by problem.</p>
 
-    <div id="links-empty-hint" class="empty-hint">Check at least one problem in step 1, then click "Show links".</div>
+    <div id="links-empty-hint" class="empty-hint">Check at least one problem in step 2, then click "Show links".</div>
     <div id="links-groups"></div>
 
     <div class="add-link-form">
@@ -76,21 +99,14 @@
     </div>
   </section>
 
-  <!-- Step 3 — fontspector report -->
+  <!-- Step 4 — fontspector report -->
   <section class="section" id="section-3">
     <div class="section__head">
-      <span class="section__num">03</span>
-      <h2>Fontspector report <span style="font-weight:400;color:var(--ink-faint);font-size:0.85rem;">(optional)</span></h2>
+      <span class="section__num">04</span>
+      <h2>Fontspector report</h2>
     </div>
-    <p class="section__intro">Drop the font files and they're checked right here with Fontspector, using the Google Fonts profile — the same engine as the <a href="https://fonttools.github.io/fontspector/" target="_blank" rel="noopener">official web tool</a>, running in your browser. Then tick the fails and warnings worth prioritizing for this designer, and add a comment where it helps. What you tick goes into the full report; the checks you comment on are also listed in the GitHub comment.</p>
-
-    <div class="dropzone" id="font-dropzone">
-      <p class="dropzone__label">Drop font files here, or click to choose</p>
-      <p class="dropzone__hint">.ttf or .otf — drop a whole family at once to also run the family-level checks. Nothing is uploaded: the fonts never leave your browser.</p>
-      <input type="file" id="font-file-input" accept=".ttf,.otf,font/ttf,font/otf" multiple>
-    </div>
-
-    <p class="fontspector-status" id="fontspector-status" aria-live="polite"></p>
+    <p class="section__intro">The fonts dropped in step 1 are checked here with Fontspector, using the Google Fonts profile — the same engine as the <a href="https://fonttools.github.io/fontspector/" target="_blank" rel="noopener">official web tool</a>, running in your browser. Tick the fails and warnings worth prioritizing for this designer, and add a comment where it helps. Each check shows the problem it belongs to and resources to fix it; they come along in the full report. What you tick goes into the full report; the checks you comment on are also listed in the GitHub comment.</p>
+    <p class="empty-hint" id="fontspector-empty-hint">Drop the fonts in step 1 to run the checks.</p>
 
     <details class="fontspector-paste-fallback" id="fontspector-paste-details">
       <summary>Already have a report? Paste it instead</summary>
@@ -112,13 +128,13 @@
     <div id="fontspector-checks" class="check-list"></div>
   </section>
 
-  <!-- Step 4 — screenshots -->
+  <!-- Step 5 — screenshots -->
   <section class="section" id="section-4">
     <div class="section__head">
-      <span class="section__num">04</span>
+      <span class="section__num">05</span>
       <h2>Add screenshots <span style="font-weight:400;color:var(--ink-faint);font-size:0.85rem;">(optional)</span></h2>
     </div>
-    <p class="section__intro">Show the actual problem — a bad glyph, a spacing issue — with a comment, and link it to one of the problems from step 1: the GitHub checklist then points to it. Images and comments go into the full report, compressed so the report link still fits in a GitHub comment.</p>
+    <p class="section__intro">Show the actual problem — a bad glyph, a spacing issue — with a comment, and link it to one of the problems from step 2: the GitHub checklist then points to it. Click <strong>Mark the problem</strong> to put coloured dots on the image, right where the problem is. Images, dots and comments go into the full report, compressed so the report link still fits in a GitHub comment.</p>
 
     <div class="dropzone" id="screenshot-dropzone">
       <p class="dropzone__label">Drop image files here, or click to choose</p>
@@ -130,13 +146,13 @@
     <div id="screenshots-list" class="screenshots-list"></div>
   </section>
 
-  <!-- Step 5 — generate -->
+  <!-- Step 6 — generate -->
   <section class="section" id="section-5">
     <div class="section__head">
-      <span class="section__num">05</span>
+      <span class="section__num">06</span>
       <h2>Generate the GitHub comment</h2>
     </div>
-    <p class="section__intro">A few details, then generate: you get a short Markdown checklist to paste as a comment on the font's GitHub issue — one action per problem, the Fontspector checks you commented on — and a link to the full report with everything else (screenshots, links, tutorials, complete Fontspector results).</p>
+    <p class="section__intro">A few details, then generate: you get a short Markdown checklist to paste as a comment on the font's GitHub issue — one action per problem, the Fontspector checks you commented on, the screenshots — and a link to the full report with the links, tutorials and Fontspector results.</p>
 
     <div class="meta-grid">
       <div class="field">
@@ -194,6 +210,15 @@
       </div>
       <ul class="output-panel__notes" id="output-notes"></ul>
 
+      <div class="shots-export" id="shots-export" hidden>
+        <p class="shots-export__title">Screenshots to add to the comment</p>
+        <p class="shots-export__hint">GitHub keeps images in its own comments, not in links: after pasting the comment on GitHub, drag each image onto its line (“drag screenshot-1.png here”). GitHub uploads it and puts it in place. The dots are drawn in.</p>
+        <div class="shots-export__list" id="shots-export-list"></div>
+        <div class="actions-row actions-row--start">
+          <button class="btn btn--secondary" id="btn-download-shots" type="button">Download all the screenshots</button>
+        </div>
+      </div>
+
       <div class="actions-row actions-row--start">
         <button class="btn btn--primary" id="btn-copy-markdown" type="button">Copy the comment</button>
         <a class="btn btn--secondary" id="btn-open-report" href="report.html" target="_blank" rel="noopener">Open the full report</a>
@@ -211,11 +236,32 @@
 
 <div class="toast" id="toast"></div>
 
+<!-- Screenshot markers: the editor opened by "Mark the problem" -->
+<div class="marker-editor" id="marker-editor" hidden role="dialog" aria-modal="true" aria-labelledby="marker-editor-title">
+  <div class="marker-editor__panel">
+    <div class="marker-editor__bar">
+      <p class="marker-editor__title" id="marker-editor-title">Mark the problem</p>
+      <div class="marker-editor__colors" id="marker-colors" role="radiogroup" aria-label="Colour"></div>
+      <label class="marker-editor__size">Size <input type="range" id="marker-size" min="2" max="20" value="6"></label>
+      <button type="button" class="btn btn--ghost" id="marker-undo">Undo</button>
+      <button type="button" class="btn btn--ghost" id="marker-clear">Clear</button>
+      <button type="button" class="btn btn--primary" id="marker-done">Done</button>
+    </div>
+    <p class="marker-editor__hint">Click on the image to add a dot. Drag a dot to move it; double-click it (or right-click) to remove it.</p>
+    <div class="marker-editor__stage" id="marker-stage">
+      <img id="marker-img" alt="">
+      <svg id="marker-svg" class="marker-layer" preserveAspectRatio="none"></svg>
+    </div>
+  </div>
+</div>
+
 <script src="js/config.js"></script>
 <script src="js/urlhosted.js"></script>
 <script src="js/markdown.js"></script>
 <script src="js/github-comment.js"></script>
 <script src="js/fontspector.js"></script>
+<script src="js/fontinfo.js"></script>
+<script src="js/compact.js"></script>
 <script src="js/app.js"></script>
 </body>
 </html>

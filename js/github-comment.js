@@ -14,7 +14,7 @@
      app, v, title, author, date, project, designer, notes, contact,
      problems:    [{ id, label, action, category, manual, tutorials: [tutorialId], links: [{ id, title, url, explanation }] }],
      tutorials:   [{ id, title, markdown }],
-     fontspector: null | { source, version, profile, files, counts, checks: [{ status, id, title, filename, message, comment }] },
+     fontspector: null | { source, version, profile, files, counts, checks: [{ status, id, title, filename, message, comment, problem, links: [{ title, url }] }] },
      screenshots: [{ name, comment, problem, src, omitted }]   (problem = id of the linked problem, or null)
    }
    ========================================================================== */
@@ -112,10 +112,11 @@ const GitHubComment = (function () {
       items.push({ kind: 'fontspector', text: text, short: verb, commented: commented });
     }
 
-    const loose = shots.filter((sh) => !sh.problem || !problemIds.has(sh.problem)).length;
+    const looseShots = shots.filter((sh) => !sh.problem || !problemIds.has(sh.problem));
+    const loose = looseShots.length;
     if (loose) {
       const short = 'Go through the ' + (loose < shots.length ? 'other ' : '') + 'annotated screenshot' + (loose === 1 ? '' : 's');
-      items.push({ kind: 'screenshots', screenshots: loose, short: short, text: short + ' in the full report' });
+      items.push({ kind: 'screenshots', screenshots: loose, short: short, text: short + (looseShots.every((sh) => sh.omitted) ? ' below' : ' in the full report') });
     }
     return items;
   }
@@ -157,23 +158,43 @@ const GitHubComment = (function () {
       commented.forEach((c) => {
         let line = '- ' + (STATUS_ICON[c.status] ? STATUS_ICON[c.status] + ' ' : '') + '**' + escapeText(c.status) + '** ' + codeSpan(c.id);
         if (c.filename) line += ' · ' + codeSpan(c.filename);
-        out.push(line + ' — ' + inlineComment(c.comment));
+        const fix = (c.links || []).find((l) => l && /^https?:\/\//.test(String(l.url || '')));
+        out.push(line + ' — ' + inlineComment(c.comment) + (fix ? ' · how to fix: [' + escapeText(fix.title) + '](' + String(fix.url).replace(/[()\s]/g, encodeURIComponent) + ')' : ''));
       });
       out.push('');
     }
 
+    // Screenshots go in the comment itself: GitHub hosts the images once
+    // they're dragged in, each onto its own line.
+    const shots = report.screenshots || [];
+    const inComment = shots.filter((sh) => sh.inComment);
+    if (inComment.length) {
+      const labels = {};
+      (report.problems || []).forEach((p) => { if (p && p.id && !p.manual) labels[p.id] = p.label; });
+      out.push('');
+      out.push('**Screenshot' + (inComment.length === 1 ? '' : 's') + '**');
+      inComment.forEach((sh) => {
+        const n = shots.indexOf(sh) + 1;
+        const about = sh.problem && labels[sh.problem] ? ' ' + escapeText(labels[sh.problem]) : '';
+        out.push('');
+        out.push('**' + n + '.**' + about + (hasComment(sh) ? ' — ' + inlineComment(sh.comment) : ''));
+        out.push('<!-- drag ' + String(sh.name || 'screenshot-' + n + '.png').replace(/--/g, '-') + ' here -->');
+      });
+    }
+    if (inComment.length) out.push('');
+
     if (opts.reportUrl) {
       const inside = [];
-      if (s.screenshots) inside.push('screenshots');
+      if ((report.screenshots || []).some((sh) => !sh.omitted)) inside.push('screenshots');
       if (s.links) inside.push('links');
       if (s.tutorials) inside.push('tutorials');
-      if (s.checks) inside.push('the complete Fontspector results');
+      if (s.checks) inside.push('the Fontspector results');
       const list = inside.length > 1 ? inside.slice(0, -1).join(', ') + ' and ' + inside[inside.length - 1] : inside[0];
       out.push('📄 **[Full report](' + opts.reportUrl + ')**' + (list ? ' — ' + list + '.' : ''));
     }
 
-    // Screenshots that didn't fit in the link get attached to the comment by hand.
-    const omitted = (report.screenshots || []).filter((sh) => sh.omitted);
+    // Screenshots that didn't fit in an older, full link get attached to the comment by hand.
+    const omitted = shots.filter((sh) => sh.omitted && !sh.inComment);
     if (omitted.length) {
       out.push('');
       out.push('📎 Too heavy for the link, attached here: ' + omitted.map((sh) => codeSpan(sh.name || 'screenshot')).join(', '));

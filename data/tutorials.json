@@ -7,8 +7,7 @@
       "glyphs-software",
       "latin",
       "accents",
-      "diacritics",
-      "germandbls"
+      "diacritics"
     ],
     "description": "A short workflow for keeping accent height and position consistent across a family, using components and consistently-named anchors."
   },
