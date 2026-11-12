@@ -5,6 +5,10 @@
    FontInfo.read(bytes)        -> { family, codepoints: Set, variable, axes: [tag…] }
    FontInfo.merge([info…])     -> the same, for a whole family (union of characters)
    FontInfo.coverage(info)     -> what the tool needs to know: scripts and features
+   FontInfo.support(info, glyphsets, languages)
+                               -> Google Fonts glyphset coverage and the languages
+                                  whose letters are all in the font (data/glyphsets.json,
+                                  data/languages.json); stored as info.support
    FontInfo.meets(info, req)   -> does the font meet a "requires" rule of problems.json
    ========================================================================== */
 
@@ -148,12 +152,40 @@ const FontInfo = (function () {
   //   { "ranges": ["0370-03FF"], "min": 20 }  at least `min` characters (default 1) in these ranges
   //   { "chars": "ßẞ" }                       at least one of these characters
   //   { "variable": true }                   a variable font
+  //   { "language": "vi_Latn" }              the font has every letter of that language
+  //   { "script": "Cyrl" }                   …of at least one language in that script
+  // ("language" and "script" use the language data; without it, "ranges" decide)
   function meets(info, req) {
     if (!req || !info) return true;
     if (req.variable && !info.variable) return false;
     if (req.chars && !Array.from(req.chars).some((ch) => info.codepoints.has(ch.codePointAt(0)))) return false;
+    const sup = info.support;
+    if (sup && (req.language || req.script)) {
+      if (req.language && !sup.languages.has(req.language)) return false;
+      if (req.script && !(sup.byScript[req.script] || []).length) return false;
+      return true;
+    }
     if (req.ranges && countIn(info, req.ranges) < (req.min || 1)) return false;
     return true;
+  }
+
+  const SET_LABEL = (name) => name.replace(/^GF_/, 'GF ').replace(/_/g, ' ');
+
+  function support(info, glyphsets, languages) {
+    const sets = Object.entries(glyphsets || {}).map(([name, cps]) => {
+      const missing = cps.filter((c) => !info.codepoints.has(c));
+      return { name: name, label: SET_LABEL(name), total: cps.length, have: cps.length - missing.length, missing: missing };
+    });
+    const langs = new Set();
+    const byScript = {};
+    Object.entries(languages || {}).forEach(([id, [name, script, population, letters]]) => {
+      if (Array.from(letters).every((ch) => info.codepoints.has(ch.codePointAt(0)))) {
+        langs.add(id);
+        (byScript[script] = byScript[script] || []).push({ id: id, name: name, population: population || 0 });
+      }
+    });
+    Object.values(byScript).forEach((l) => l.sort((a, b) => b.population - a.population));
+    return { sets: sets, languages: langs, byScript: byScript };
   }
 
   const SCRIPTS = [
@@ -178,5 +210,5 @@ const FontInfo = (function () {
     return { scripts: scripts, chars: info.codepoints.size };
   }
 
-  return { read: read, merge: merge, meets: meets, coverage: coverage };
+  return { read: read, merge: merge, meets: meets, coverage: coverage, support: support };
 })();

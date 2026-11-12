@@ -284,6 +284,8 @@ a:hover { color: var(--blue-900); }
   font-weight: 600;
 }
 
+.problem-card__detected--warn { background: var(--blue-50); color: var(--ink-soft); }
+
 .problem-card__absent {
   display: block;
   margin: 0 0 6px;
@@ -291,7 +293,19 @@ a:hover { color: var(--blue-900); }
   color: var(--ink-faint);
 }
 
-.problem-card--absent { opacity: 0.72; }
+.problem-card--absent { opacity: 0.6; cursor: default; }
+.problem-card--absent input { visibility: hidden; }
+
+.problem-card__suggested {
+  display: inline-block;
+  margin: 0 6px 6px 0;
+  padding: 1px 8px;
+  border-radius: var(--radius-s);
+  background: var(--blue-50);
+  color: var(--blue-700);
+  font-size: 0.75rem;
+  font-weight: 600;
+}
 
 .problems-other { margin-top: 14px; }
 .problems-other[hidden] { display: none; }

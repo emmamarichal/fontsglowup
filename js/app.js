@@ -29,6 +29,10 @@
     font: null,           // what the dropped fonts contain (js/fontinfo.js), or null before a drop
     checkRules: [],       // data/check-rules.json: which Fontspector checks belong to which problem
     detected: {},         // problem id -> [Fontspector check ids that failed or warned]
+    suggested: {},        // problem id -> why the tool ticked it ("Fontspector FAIL", "the font supports Vietnamese")
+    failing: {},          // problem id -> [Fontspector check ids with FAIL, ERROR or FATAL]
+    glyphsets: null,      // data/glyphsets.json
+    languages: null,      // data/languages.json
     linksComputedFor: null, // selection the links/tutorials of step 2 were computed for
     lastOutput: null        // last generated { markdown, link, payload, … }
   };
@@ -40,13 +44,17 @@
 
   async function init() {
     try {
-      const [problems, linksDb, tutorialsDb, checkRules] = await Promise.all([
+      const [problems, linksDb, tutorialsDb, checkRules, glyphsets, languages] = await Promise.all([
         fetchJSON('data/problems.json'),
         fetchJSON('data/links-database.json'),
         fetchJSON('data/tutorials.json').catch(() => []),
-        fetchJSON('data/check-rules.json').catch(() => [])
+        fetchJSON('data/check-rules.json').catch(() => []),
+        fetchJSON('data/glyphsets.json').catch(() => null),
+        fetchJSON('data/languages.json').catch(() => null)
       ]);
       state.checkRules = checkRules;
+      state.glyphsets = glyphsets;
+      state.languages = languages;
       state.problems = problems;
       state.linksDb = linksDb;
       state.tutorialsDb = tutorialsDb;
@@ -99,18 +107,29 @@
 
   // Tags of the problems that don't apply to this font (Greek for a Latin-only
   // font…): a link or tutorial carrying one of them is about something the
-  // font doesn't have, so it isn't proposed — unless that problem is ticked anyway.
+  // font doesn't have, so it isn't proposed.
   function excludedTags() {
     const ex = new Set();
     if (!state.font) return ex;
     state.problems.forEach((p) => {
-      if (p.scope && !problemApplies(p) && !state.selectedProblemIds.has(p.id)) p.scope.forEach((t) => ex.add(t));
+      if (p.scope && !problemApplies(p)) p.scope.forEach((t) => ex.add(t));
     });
     return ex;
   }
 
   function isAllowed(item, ex) {
     return !(item.tags || []).some((t) => ex.has(t));
+  }
+
+  // A link tagged with the scope of a script problem ("exclusive": Vietnamese,
+  // Cyrillic, Greek, Arabic, ß) only goes under that problem: the Vietnamese
+  // tone marks article isn't a resource for "Latin accents", even when the font
+  // supports Vietnamese.
+  function matchesProblem(item, p) {
+    const tags = item.tags || [];
+    if (!tags.some((t) => (p.tags || []).includes(t))) return false;
+    return !state.problems.some((q) => q.exclusive && q.id !== p.id && (q.scope || []).some((t) => tags.includes(t)) &&
+      !(p.scope || []).some((t) => tags.includes(t)));
   }
 
   function renderProblems() {
@@ -128,6 +147,64 @@
     document.getElementById('problems-other-summary').textContent =
       'Not in this font (' + skipped.length + '): ' + skipped.map((p) => p.category === 'Technical' ? p.label : p.category).join(', ');
     renderDetectedBar();
+  }
+
+  // What the analysis ticks by itself: the scripts the font has (suggest: true in
+  // problems.json), then the problems Fontspector finds. Unticking one is the
+  // reviewer's call and sticks until the next drop. Problems that don't apply
+  // to the font are unticked.
+  function applySuggestions(fromFontspector) {
+    if (!state.font) return;
+    const dropped = [];
+    state.problems.forEach((p) => {
+      if (!problemApplies(p) && state.selectedProblemIds.has(p.id)) {
+        state.selectedProblemIds.delete(p.id);
+        dropped.push(p.label);
+      }
+    });
+    const add = (p, why) => {
+      if (state.selectedProblemIds.has(p.id) || !problemApplies(p)) return;
+      state.selectedProblemIds.add(p.id);
+      state.suggested[p.id] = why;
+    };
+    if (!fromFontspector) {
+      const sup = state.font.support;
+      state.problems.filter((p) => p.suggest).forEach((p) => {
+        if (typeof p.suggest === 'string') {
+          const langs = sup && p.requires && p.requires.script ? sup.byScript[p.requires.script] || [] : [];
+          const names = langs.slice(0, 3).map((l) => l.name).join(', ') + (langs.length > 3 ? '…' : '');
+          add(p, p.suggest.replace('{n}', langs.length).replace('{names}', names));
+        } else if (p.suggest.incomplete && sup) {
+          // a glyphset the font has started (half of it or more) but not finished
+          const gap = supportedSets(sup).filter((g) => p.suggest.incomplete.includes(g.name) && g.missing.length);
+          if (gap.length) add(p, gap.map((g) => g.missing.length + ' missing in ' + g.label + ' (' + g.missing.slice(0, 8).map(showChar).join(' ') + (g.missing.length > 8 ? '…' : '') + ')').join('; '));
+        }
+      });
+    }
+    // Fontspector: only what fails (FAIL, ERROR, FATAL); warnings are shown, not ticked
+    detectedProblems().filter((p) => (state.failing[p.id] || []).length).forEach((p) => add(p, 'Fontspector FAIL'));
+    renderProblems();
+    refreshScreenshotIssueSelects();
+    refreshLinks();
+    if (dropped.length) showToast('Unticked, not in this font: ' + dropped.join(', '));
+  }
+
+  // The glyphsets of the scripts the font supports (at least one language):
+  // GF Arabic Core shares digits and punctuation with any font, so it only
+  // counts for a font that has Arabic.
+  const SET_SCRIPT = { Latin: 'Latn', Cyrillic: 'Cyrl', Greek: 'Grek', Arabic: 'Arab' };
+  function supportedSets(sup) {
+    return sup.sets.filter((g) => {
+      const sc = SET_SCRIPT[(g.name.match(/^GF_([A-Za-z]+)_/) || [])[1]];
+      if (!sc || !(sup.byScript[sc] || []).length) return false;
+      return g.name !== 'GF_Latin_Vietnamese' || sup.languages.has('vi_Latn') || g.have >= g.total * 0.9;
+    });
+  }
+
+  // A combining mark on its own is shown on a dotted circle.
+  function showChar(cp) {
+    const ch = String.fromCodePoint(cp);
+    return /\p{M}/u.test(ch) ? '◌' + ch : ch;
   }
 
   function detectedProblems() {
@@ -162,18 +239,23 @@
   }
 
   function renderProblemCard(problem, notInFont) {
-    const label = document.createElement('label');
+    const label = document.createElement(notInFont ? 'div' : 'label');
     label.className = 'problem-card cat-' + slugifyCategory(problem.category) + (notInFont ? ' problem-card--absent' : '');
 
     const checkbox = document.createElement('input');
     checkbox.type = 'checkbox';
     checkbox.value = problem.id;
     checkbox.checked = state.selectedProblemIds.has(problem.id);
+    checkbox.disabled = !!notInFont;
+    checkbox.checked = !notInFont && state.selectedProblemIds.has(problem.id);
     checkbox.addEventListener('change', () => {
       if (checkbox.checked) state.selectedProblemIds.add(problem.id);
       else state.selectedProblemIds.delete(problem.id);
+      delete state.suggested[problem.id];  // the reviewer decided
       refreshScreenshotIssueSelects();
       renderDetectedBar();
+      label.querySelector('.problem-card__suggested')?.remove();
+      if (state.linksComputedFor !== null) refreshLinks();
     });
 
     const body = document.createElement('div');
@@ -189,11 +271,20 @@
     lbl.textContent = problem.label;
     body.appendChild(lbl);
 
+    if (state.suggested[problem.id] && state.selectedProblemIds.has(problem.id)) {
+      const sug = document.createElement('span');
+      sug.className = 'problem-card__suggested';
+      sug.textContent = 'Suggested: ' + state.suggested[problem.id];
+      body.appendChild(sug);
+    }
+
     const found = state.detected[problem.id] || [];
     if (found.length) {
+      const nFail = (state.failing[problem.id] || []).length;
+      const nWarn = found.length - nFail;
       const badge = document.createElement('span');
-      badge.className = 'problem-card__detected';
-      badge.textContent = 'Found by Fontspector: ' + found.length + (found.length === 1 ? ' check' : ' checks');
+      badge.className = 'problem-card__detected' + (nFail ? '' : ' problem-card__detected--warn');
+      badge.textContent = 'Fontspector: ' + [nFail ? nFail + ' FAIL' : '', nWarn ? nWarn + ' WARN' : ''].filter(Boolean).join(', ');
       badge.title = found.join('\n');
       body.appendChild(badge);
     }
@@ -235,9 +326,7 @@
     const matches = [];
     const ex = excludedTags();
     state.linksDb.filter((l) => isAllowed(l, ex)).forEach((link) => {
-      const matchedProblemIds = selected
-        .filter((p) => (link.tags || []).some((t) => (p.tags || []).includes(t)))
-        .map((p) => p.id);
+      const matchedProblemIds = selected.filter((p) => matchesProblem(link, p)).map((p) => p.id);
       if (matchedProblemIds.length) {
         matches.push(Object.assign({}, link, { matchedProblemIds: matchedProblemIds }));
       }
@@ -250,9 +339,7 @@
     const matches = [];
     const ex = excludedTags();
     state.tutorialsDb.filter((t) => isAllowed(t, ex)).forEach((tut) => {
-      const matchedProblemIds = selected
-        .filter((p) => (tut.tags || []).some((t) => (p.tags || []).includes(t)))
-        .map((p) => p.id);
+      const matchedProblemIds = selected.filter((p) => matchesProblem(tut, p)).map((p) => p.id);
       if (matchedProblemIds.length) {
         matches.push(Object.assign({}, tut, { matchedProblemIds: matchedProblemIds }));
       }
@@ -630,10 +717,13 @@
       try { infos.push(FontInfo.read(b)); } catch (err) { showToast(names[i] + ': ' + err.message); }
     });
     state.font = infos.length ? FontInfo.merge(infos) : null;
+    if (state.font && state.languages) state.font.support = FontInfo.support(state.font, state.glyphsets, state.languages);
     state.detected = {};
+    state.failing = {};
+    Object.keys(state.suggested).forEach((id) => state.selectedProblemIds.delete(id));  // a new font, new suggestions
+    state.suggested = {};
     renderFontSummary(names);
-    renderProblems();
-    if (state.linksComputedFor !== null) refreshLinks();
+    applySuggestions(false);
 
     let worker;
     try {
@@ -699,6 +789,27 @@
     p.className = 'font-summary__facts';
     p.textContent = facts.join(' · ');
     box.appendChild(p);
+    const sup = f.support;
+    if (sup) {
+      const sets = supportedSets(sup);
+      if (sets.length) {
+        const gs = document.createElement('p');
+        gs.className = 'font-summary__facts';
+        gs.textContent = 'Glyphsets: ' + sets.map((g) => g.label + ' ' + (g.missing.length ? Math.floor(g.have / g.total * 100) + ' %' : '✓')).join(' · ');
+        box.appendChild(gs);
+      }
+      const scripts = Object.entries(sup.byScript).sort((a, b) => b[1].length - a[1].length);
+      const total = scripts.reduce((n, [, l]) => n + l.length, 0);
+      if (total) {
+        const ls = document.createElement('p');
+        ls.className = 'font-summary__facts';
+        const SCRIPT_NAMES = { Latn: 'Latin', Cyrl: 'Cyrillic', Grek: 'Greek', Arab: 'Arabic', Hebr: 'Hebrew', Armn: 'Armenian', Geor: 'Georgian', Deva: 'Devanagari' };
+        ls.textContent = 'Languages (all their letters in the font): ' + total + ' — ' +
+          scripts.map(([sc, l]) => (SCRIPT_NAMES[sc] || sc) + ' ' + l.length).join(', ') +
+          (sup.languages.has('vi_Latn') ? ', Vietnamese included' : '');
+        box.appendChild(ls);
+      }
+    }
     const absent = state.problems.filter((pr) => !problemApplies(pr));
     if (absent.length) {
       const n = document.createElement('p');
@@ -725,13 +836,20 @@
   // problem id -> the failing or warning checks that belong to it
   function computeDetected() {
     const out = {};
+    const failing = {};
     state.fontspectorChecks.forEach((c) => {
       if (!c.problem) return;
       out[c.problem] = out[c.problem] || [];
       if (!out[c.problem].includes(c.id)) out[c.problem].push(c.id);
+      if (['FAIL', 'ERROR', 'FATAL'].includes(c.status)) {
+        failing[c.problem] = failing[c.problem] || [];
+        if (!failing[c.problem].includes(c.id)) failing[c.problem].push(c.id);
+      }
     });
     state.detected = out;
-    renderProblems();
+    state.failing = failing;
+    if (state.font) applySuggestions(true);
+    else renderProblems();
   }
 
   function withFix(c) {

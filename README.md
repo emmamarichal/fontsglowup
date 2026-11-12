@@ -49,6 +49,8 @@ When the tool runs locally, the links *inside the GitHub comment* still point to
 ├── data/
 │   ├── problems.json             # the checkbox cards in step 2
 │   ├── check-rules.json          # which Fontspector checks point to which problem, and the links to fix them
+│   ├── glyphsets.json            # the Google Fonts glyphsets, as code points (made by tools/build_font_data.py)
+│   ├── languages.json            # the letters of every living language of gflanguages (same)
 │   ├── links-database.json       # THE link database to fill in
 │   └── tutorials.json            # the tutorial database (points at files below)
 └── tutorials/
@@ -127,11 +129,13 @@ Two optional fields in step 6 — who reviewed, and how to reach them (an e-mail
 
 ### Step 1: the fonts first
 
-The tool starts with the fonts: drop the family (.ttf / .otf) and `js/fontinfo.js` reads what it contains — its characters (cmap), the scripts they cover, whether it's variable — while Fontspector checks it in the background (see [Fontspector report](#fontspector-report-step-4)). Dropping fonts is optional: without them, every problem and link is offered, as before.
+The tool starts with the fonts: drop the family (.ttf / .otf) and `js/fontinfo.js` reads what it contains — its characters (cmap), its coverage of the Google Fonts glyphsets (GF Latin Core, Plus, Vietnamese, Cyrillic, Greek, Arabic), the languages whose letters are all in the font (gflanguages exemplars), whether it's variable — while Fontspector checks it in the background (see [Fontspector report](#fontspector-report-step-4)). Dropping fonts is optional: without them, every problem and link is offered, as before.
 
 With the fonts, two things change in the next steps:
 
-- **Only what applies to the font is proposed.** A problem with a `requires` rule (below) that the font doesn't meet — Greek letters in a Latin-only font, Vietnamese stacking without Vietnamese letters, variable axes in a static font — moves to a folded *Not in this font* list (it can still be ticked from there). Its `scope` tags are then left out of the links and tutorials: a link tagged `greek` isn't proposed for a font without Greek, even under "Latin accents poorly drawn".
+- **Only what applies to the font is proposed.** A problem with a `requires` rule (below) that the font doesn't meet — Greek letters in a Latin-only font, Vietnamese stacking without a Vietnamese set, variable axes in a static font — moves to a folded *Not in this font* list, where it can't be ticked (and it's unticked if it was). Its `scope` tags are then left out of the links and tutorials: a link tagged `greek` isn't proposed for a font without Greek, even under "Latin accents poorly drawn".
+- **The suggested problems are ticked from the start**, with a "Suggested: …" tag, mostly from the glyphsets and the languages: the scripts the font supports ("the font supports 65 Cyrillic languages (Russian, Ukrainian, Kazakh…)", Greek, Vietnamese, Arabic), an incomplete glyphset of a script the font supports ("29 missing in GF Latin Core (Ċ ċ Ġ ġ…)"), and, once Fontspector has run, the problems with a **FAIL, ERROR or FATAL** — warnings are shown on the cards ("Fontspector: 1 FAIL, 2 WARN") but don't tick anything. Step 3 is filled in right away. Untick what doesn't apply; a new drop replaces the suggestions.
+- **Script resources stay with their script.** A link or tutorial about Vietnamese, Cyrillic, Greek, Arabic or ß only appears under that problem (`"exclusive": true` in `problems.json`): ticking "Latin accents" never brings the Vietnamese tone marks article, even for a font that supports Vietnamese.
 - **What Fontspector finds points to the problems.** Each FAIL and WARN is matched to a problem with `data/check-rules.json` (below). In step 2 the matching cards get a "Found by Fontspector: n checks" badge, and a bar above the cards ticks them all in one click. In step 4 each check shows its problem and **How to fix** links; ticked checks carry them into the full report, and a commented check gets its first link in the GitHub comment.
 
 ### `data/problems.json` — the cards in step 2
@@ -156,7 +160,7 @@ Two optional fields tie a problem to what the font contains:
 "scope": ["greek", "polytonic"]
 ```
 
-`requires` says when the problem applies: at least `min` characters (default 1) in the Unicode `ranges` (hex), at least one of the characters in `chars` (`"chars": "ßẞ"`), or `"variable": true`. `missing` is shown on the card when the font doesn't meet it. `scope` lists the tags that only make sense with this script or feature: when the problem doesn't apply, links and tutorials carrying one of these tags are left out. Keep scope tags off general links (a general diacritics guide shouldn't be tagged `vietnamese`, or a Latin-only font would lose it).
+`"suggest": "the font supports {n} Cyrillic languages ({names})"` ticks the problem when the font meets `requires`, with that reason on the card; `"suggest": {"incomplete": ["GF_Latin_Core", …]}` ticks it when one of these glyphsets is incomplete in a script the font supports. `"exclusive": true` keeps the links carrying the problem's `scope` tags under that problem only. `requires` says when the problem applies: `"language": "vi_Latn"` (every letter of that language is in the font), `"script": "Cyrl"` (every letter of at least one language in that script), at least one of the characters in `chars` (`"chars": "ßẞ"`), or `"variable": true`; `ranges` (hex) with `min` characters (default 1) is used instead of `language` / `script` when the language data can't be loaded. `missing` is shown on the card when the font doesn't meet it. `scope` lists the tags that only make sense with this script or feature: when the problem doesn't apply, links and tutorials carrying one of these tags are left out. Keep scope tags off general links (a general diacritics guide shouldn't be tagged `vietnamese`, or a Latin-only font would lose it).
 
 `action` is the task this problem becomes in the GitHub checklist — short, imperative, in English, as the designer will read it ("Redraw the germandbls (ß / ẞ)"). `category` sets the card's pale color tint (via a slugified `.cat-<category>` class — add a matching entry in `css/style.css` if you introduce a new category). `tags` is what links this problem to the links and tutorials databases below — feel free to invent your own tags, there's no closed list.
 
@@ -205,6 +209,17 @@ A tutorial is different from a link: since the content lives *in this repo* rath
 In the interface (step 2), a matching tutorial appears above the links for its problem, in a highlighted card with a "Tutorial" badge and a note that it'll be embedded in full — not just its title and a link.
 
 **Suggesting a tutorial** goes through `contribute.html`, same additive-only spirit as links — see below.
+
+### `data/glyphsets.json` and `data/languages.json`
+
+Made from the `glyphsets` and `gflanguages` Python packages; run again to update them:
+
+```bash
+pip install glyphsets gflanguages
+python tools/build_font_data.py
+```
+
+A language counts as supported when all its base letters (exemplar characters, marks left out) are in the font — the same rule as the submissions report's character count. It doesn't check mark positioning, which shaperglot does in the submissions report, so it can count a few more languages.
 
 ### `data/check-rules.json` — from a Fontspector check to a problem and its fixes
 

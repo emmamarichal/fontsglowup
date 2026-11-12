@@ -15,8 +15,10 @@
     "action": "Fix the Vietnamese accent stacking",
     "description": "Tone mark + modified vowel stacking handled poorly (e.g. ẩ, ộ, ẫ, ẳ): collisions, system height, stacking order.",
     "tags": ["vietnamese", "accents", "diacritics", "stacking"],
-    "requires": {"ranges": ["1EA0-1EF9"], "min": 10, "missing": "no Vietnamese letters (ẠẢẤẦẨ…)"},
-    "scope": ["vietnamese", "stacking"]
+    "requires": {"language": "vi_Latn", "ranges": ["1EA0-1EF9"], "min": 60, "missing": "doesn't support Vietnamese"},
+    "scope": ["vietnamese", "stacking"],
+    "suggest": "the font supports Vietnamese",
+    "exclusive": true
   },
   {
     "id": "comb-accents",
@@ -42,8 +44,10 @@
     "action": "Rework the Cyrillic letters",
     "description": "Forms traced from Latin without adapting to Cyrillic drawing conventions (e.g. italic а, д, л, я).",
     "tags": ["cyrillic"],
-    "requires": {"ranges": ["0400-052F"], "min": 20, "missing": "no Cyrillic letters"},
-    "scope": ["cyrillic"]
+    "requires": {"script": "Cyrl", "ranges": ["0400-052F"], "min": 20, "missing": "no Cyrillic language supported"},
+    "scope": ["cyrillic"],
+    "suggest": "the font supports {n} Cyrillic languages ({names})",
+    "exclusive": true
   },
   {
     "id": "germandbls",
@@ -53,7 +57,8 @@
     "description": "Incorrect construction of lowercase ß or capital ẞ, shape confusion with β or ss.",
     "tags": ["german", "eszett", "germandbls"],
     "requires": {"chars": "ßẞ", "missing": "no ß or ẞ"},
-    "scope": ["german", "eszett", "germandbls"]
+    "scope": ["german", "eszett", "germandbls"],
+    "exclusive": true
   },
   {
     "id": "greek",
@@ -62,8 +67,10 @@
     "action": "Rework the Greek letters",
     "description": "Forms traced from Latin without respecting Greek conventions (tonal/polytonic forms included).",
     "tags": ["greek"],
-    "requires": {"ranges": ["0370-03FF", "1F00-1FFF"], "min": 20, "missing": "no Greek letters"},
-    "scope": ["greek", "polytonic"]
+    "requires": {"script": "Grek", "ranges": ["0370-03FF", "1F00-1FFF"], "min": 20, "missing": "no Greek language supported"},
+    "scope": ["greek", "polytonic"],
+    "suggest": "the font supports Greek",
+    "exclusive": true
   },
   {
     "id": "arabic",
@@ -72,8 +79,10 @@
     "action": "Fix the Arabic forms and joining",
     "description": "Joining issues between isolated/initial/medial/final forms, or poorly drawn diacritic dots.",
     "tags": ["arabic", "joining"],
-    "requires": {"ranges": ["0600-06FF", "0750-077F", "08A0-08FF", "FB50-FDFF", "FE70-FEFF"], "min": 20, "missing": "no Arabic letters"},
-    "scope": ["arabic", "joining"]
+    "requires": {"script": "Arab", "ranges": ["0600-06FF", "0750-077F", "08A0-08FF", "FB50-FDFF", "FE70-FEFF"], "min": 20, "missing": "no Arabic-script language supported"},
+    "scope": ["arabic", "joining"],
+    "suggest": "the font supports {n} Arabic-script languages ({names})",
+    "exclusive": true
   },
   {
     "id": "glyphset",
@@ -81,7 +90,8 @@
     "label": "Incomplete character set",
     "action": "Complete the character set (GF Latin Core at least)",
     "description": "Glyphs Google Fonts expects are missing: currency and math signs, soft hyphen, small caps announced but missing, characters needed by the languages the font claims.",
-    "tags": ["glyphset", "coverage"]
+    "tags": ["glyphset", "coverage"],
+    "suggest": {"incomplete": ["GF_Latin_Core", "GF_Cyrillic_Core", "GF_Greek_Core", "GF_Arabic_Core"]}
   },
   {
     "id": "spacing-kerning",
